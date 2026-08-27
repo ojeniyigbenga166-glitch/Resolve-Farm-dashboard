@@ -81,8 +81,19 @@ export default function Settings() {
       }
       const reader = new FileReader();
       reader.onload = (event) => {
-        setProfile(prev => ({ ...prev, avatar: event.target.result }));
-        triggerToast('Profile photo updated!');
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = 150;
+          canvas.height = 150;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, 150, 150);
+          
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8); // 0.8 quality
+          setProfile(prev => ({ ...prev, avatar: compressedBase64 }));
+          triggerToast('Profile photo updated!');
+        };
+        img.src = event.target.result;
       };
       reader.readAsDataURL(file);
     }

@@ -196,16 +196,40 @@ export default function ActivityGallery() {
       alert('Please select an image file.');
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      alert('File size exceeds 5MB limit.');
-      return;
-    }
     const reader = new FileReader();
     reader.onload = (event) => {
-      setFormData(prev => ({
-        ...prev,
-        imgUrl: event.target.result
-      }));
+      const img = new Image();
+      img.onload = () => {
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7); // 0.7 quality
+        setFormData(prev => ({
+          ...prev,
+          imgUrl: compressedBase64
+        }));
+      };
+      img.src = event.target.result;
     };
     reader.readAsDataURL(file);
   };
