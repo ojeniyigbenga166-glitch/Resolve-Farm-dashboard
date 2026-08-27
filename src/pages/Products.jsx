@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { supabase } from '../supabaseClient';
 import { 
   Plus, 
   Grid, 
@@ -80,22 +81,15 @@ const initialProducts = [
   }
 ];
 
-// Predefined available product images for mock uploads
-const availableProductImages = [
-  { name: 'Habanero Pepper', url: habaneroImg },
-  { name: 'African Corn', url: cornImg },
-  { name: 'Roma Tomatoes', url: tomatoesImg },
-  { name: 'Yellow Bell Pepper', url: pepperImg },
-  { name: 'Cassava Tubers', url: cassavaImg },
-  { name: 'Sweet Potatoes', url: potatoesImg }
-];
-
 export default function Products() {
   const [products, setProducts] = useState(initialProducts);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'table'
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   
+  // Ref for local system file upload
+  const productFileInputRef = useRef(null);
+
   // Drawer States
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerMode, setDrawerMode] = useState('add'); // 'add' or 'edit'
@@ -111,6 +105,36 @@ export default function Products() {
     img: ''
   });
 
+  const fetchProducts = async () => {
+    try {
+      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        setProducts(initialProducts);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('id', { ascending: false });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setProducts(data);
+      } else {
+        setProducts(initialProducts);
+      }
+    } catch (err) {
+      console.warn('Supabase products table not configured or connection failed, using initial mock data.', err.message);
+      setProducts(initialProducts);
+    }
+  };
+
+  // Fetch products on mount
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
   // Unique categories list for filters
   const categories = ['All', ...new Set(products.map(p => p.category))];
 
@@ -121,22 +145,47 @@ export default function Products() {
   const totalCategoriesCount = new Set(products.map(p => p.category)).size;
 
   // Status toggle handler
-  const handleToggleStatus = (id) => {
+  const handleToggleStatus = async (id) => {
+    let nextStatus = 'published';
     setProducts(prevProducts => 
       prevProducts.map(product => {
         if (product.id === id) {
-          const nextStatus = product.status === 'published' ? 'draft' : 'published';
+          nextStatus = product.status === 'published' ? 'draft' : 'published';
           return { ...product, status: nextStatus };
         }
         return product;
       })
     );
+
+    try {
+      if (import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        const { error } = await supabase
+          .from('products')
+          .update({ status: nextStatus })
+          .eq('id', id);
+        if (error) throw error;
+      }
+    } catch (err) {
+      console.error('Error toggling product status in Supabase:', err);
+    }
   };
 
   // Delete product handler
-  const handleDeleteProduct = (id, name) => {
+  const handleDeleteProduct = async (id, name) => {
     if (window.confirm(`Are you sure you want to delete "${name}" from the product list?`)) {
       setProducts(prevProducts => prevProducts.filter(p => p.id !== id));
+
+      try {
+        if (import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY) {
+          const { error } = await supabase
+            .from('products')
+            .delete()
+            .eq('id', id);
+          if (error) throw error;
+        }
+      } catch (err) {
+        console.error('Error deleting product from Supabase:', err);
+      }
     }
   };
 
@@ -184,26 +233,52 @@ export default function Products() {
     }));
   };
 
-  // Mock Upload: Pick an image corresponding to product name or default
-  const handleMockImageUpload = () => {
-    // Attempt to match keywords in name, otherwise cycle
-    const nameKeyword = formData.name.toLowerCase();
-    const matched = availableProductImages.find(img => 
-      nameKeyword.includes(img.name.toLowerCase()) || 
-      img.name.toLowerCase().includes(nameKeyword)
-    );
-    
-    if (matched && nameKeyword.length > 0) {
-      setFormData(prev => ({ ...prev, img: matched.url }));
-    } else {
-      // Pick random
-      const randomIdx = Math.floor(Math.random() * availableProductImages.length);
-      setFormData(prev => ({ ...prev, img: availableProductImages[randomIdx].url }));
+  // Local System Upload: Select and compress local crop photo
+  const handleProductFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const MAX_WIDTH = 600;
+          const MAX_HEIGHT = 600;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8); // 0.8 quality
+          setFormData(prev => ({ ...prev, img: compressedBase64 }));
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
     }
   };
 
   // Form submit handler
-  const handleSaveProduct = (e) => {
+  const handleSaveProduct = async (e) => {
     e.preventDefault();
     if (!formData.name.trim()) {
       alert('Product name is required.');
@@ -215,7 +290,6 @@ export default function Products() {
     }
 
     const savedProduct = {
-      id: drawerMode === 'add' ? Date.now() : editingProductId,
       name: formData.name.trim(),
       category: formData.category,
       price: Number(formData.price),
@@ -224,13 +298,35 @@ export default function Products() {
       img: formData.img || habaneroImg // Fallback
     };
 
+    // Optimistic UI updates
     if (drawerMode === 'add') {
-      setProducts(prev => [savedProduct, ...prev]);
+      const localId = Date.now();
+      setProducts(prev => [{ id: localId, ...savedProduct }, ...prev]);
     } else {
-      setProducts(prev => prev.map(p => p.id === editingProductId ? savedProduct : p));
+      setProducts(prev => prev.map(p => p.id === editingProductId ? { id: editingProductId, ...savedProduct } : p));
     }
     
     setIsDrawerOpen(false);
+
+    try {
+      if (import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        if (drawerMode === 'add') {
+          const { error } = await supabase
+            .from('products')
+            .insert([savedProduct]);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from('products')
+            .update(savedProduct)
+            .eq('id', editingProductId);
+          if (error) throw error;
+        }
+        fetchProducts(); // reload from DB to sync IDs
+      }
+    } catch (err) {
+      console.error('Error saving product to Supabase:', err);
+    }
   };
 
   // Filtered Products List
@@ -577,7 +673,7 @@ export default function Products() {
                 </button>
               </div>
             ) : (
-              <div className="image-upload-dropzone" onClick={handleMockImageUpload}>
+              <div className="image-upload-dropzone" onClick={() => productFileInputRef.current?.click()}>
                 <div className="upload-icon-wrapper">
                   <Upload size={22} />
                 </div>
@@ -585,6 +681,13 @@ export default function Products() {
                 <span className="upload-text-sub">Supports PNG, JPG, or JPEG</span>
               </div>
             )}
+            <input 
+              type="file" 
+              ref={productFileInputRef} 
+              style={{ display: 'none' }} 
+              onChange={handleProductFileChange} 
+              accept="image/*"
+            />
           </div>
 
           <div className="drawer-footer">
