@@ -1,0 +1,33 @@
+:root {
+  --color-forest: #163A24;
+  --color-forest-hover: #1f5032;
+  --color-cream: #F8F9FA; /* Sleek light off-white background */
+  --color-tomato: #D94A38;
+
+  --color-white: #FFFFFF;
+  --color-text: #1A1A1A;
+  --color-text-muted: #666666;
+
+  --color-success: #4F8A5B;
+  --color-warning: #D8A31A;
+  --color-border: #EEEEEE;
+
+  /* Status Colors */
+  --color-status-pending-bg: #FFF3E0;
+  --color-status-pending-text: #E65100;
+  --color-status-processing-bg: #E8F5E9;
+  --color-status-processing-text: #2E7D32;
+  --color-status-delivered-bg: #E8F5E9;
+  --color-status-delivered-text: #2E7D32;
+  --color-status-cancelled-bg: #FFEBEE;
+  --color-status-cancelled-text: #C62828;
+
+  --font-display: "Playfair Display", serif;
+  --font-body: "Inter", sans-serif;
+
+  --sidebar-width: 260px;
+  --header-height: 72px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+}
