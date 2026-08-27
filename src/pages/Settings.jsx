@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
 import { 
   User, 
   Sliders, 
@@ -87,22 +88,106 @@ export default function Settings() {
     }
   };
 
+  const fetchSettings = async () => {
+    try {
+      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        return;
+      }
+      const { data, error } = await supabase
+        .from('system_settings')
+        .select('*')
+        .eq('id', 1)
+        .single();
+
+      if (error) throw error;
+      if (data) {
+        setProfile({
+          name: data.profile_name,
+          email: data.profile_email,
+          phone: data.profile_phone || '',
+          role: data.profile_role,
+          location: data.profile_location || '',
+          avatar: data.profile_avatar
+        });
+        setThresholds({
+          tempUnit: data.temp_unit,
+          areaUnit: data.area_unit,
+          moistureMin: data.moisture_min,
+          phMin: Number(data.ph_min),
+          phMax: Number(data.ph_max),
+          tempWarningMax: data.temp_warning_max
+        });
+        setNotifications({
+          lowStockAlert: data.low_stock_alert,
+          orderSuccessAlert: data.order_success_alert,
+          weeklyReport: data.weekly_report
+        });
+        setSecurity(prev => ({
+          ...prev,
+          twoFactorEnabled: data.two_factor_enabled
+        }));
+      }
+    } catch (err) {
+      console.warn('Could not load settings from Supabase, using defaults.', err.message);
+    }
+  };
+
+  // Fetch settings on mount
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const syncSettingsToSupabase = async (updatedFields) => {
+    try {
+      if (import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        const { error } = await supabase
+          .from('system_settings')
+          .update(updatedFields)
+          .eq('id', 1);
+
+        if (error) throw error;
+      }
+    } catch (err) {
+      console.error('Failed to sync settings with Supabase:', err.message);
+    }
+  };
+
   // Profile Form Save
-  const handleProfileSubmit = (e) => {
+  const handleProfileSubmit = async (e) => {
     e.preventDefault();
     triggerToast('Profile settings saved successfully!');
+    await syncSettingsToSupabase({
+      profile_name: profile.name,
+      profile_email: profile.email,
+      profile_phone: profile.phone,
+      profile_location: profile.location,
+      profile_avatar: profile.avatar
+    });
   };
 
   // Thresholds Form Save
-  const handleThresholdsSubmit = (e) => {
+  const handleThresholdsSubmit = async (e) => {
     e.preventDefault();
     triggerToast('Agricultural thresholds updated successfully!');
+    await syncSettingsToSupabase({
+      temp_unit: thresholds.tempUnit,
+      area_unit: thresholds.areaUnit,
+      moisture_min: thresholds.moistureMin,
+      ph_min: thresholds.phMin,
+      ph_max: thresholds.phMax,
+      temp_warning_max: thresholds.tempWarningMax
+    });
   };
 
   // Notification Preferences Save
-  const handleNotificationsSubmit = (e) => {
+  const handleNotificationsSubmit = async (e) => {
     e.preventDefault();
     triggerToast('Notification preferences updated!');
+    await syncSettingsToSupabase({
+      low_stock_alert: notifications.lowStockAlert,
+      order_success_alert: notifications.orderSuccessAlert,
+      weekly_report: notifications.weeklyReport
+    });
   };
 
   // Security Password Submit
@@ -133,17 +218,26 @@ export default function Settings() {
     }, 2000);
   };
 
-  const handleResetThresholds = () => {
+  const handleResetThresholds = async () => {
     if (window.confirm('Reset thresholds to default parameters?')) {
-      setThresholds({
+      const defaults = {
         tempUnit: '°C',
         areaUnit: 'Hectares',
         moistureMin: 60,
         phMin: 6.0,
         phMax: 7.2,
         tempWarningMax: 35
-      });
+      };
+      setThresholds(defaults);
       triggerToast('Restored default parameters.');
+      await syncSettingsToSupabase({
+        temp_unit: defaults.tempUnit,
+        area_unit: defaults.areaUnit,
+        moisture_min: defaults.moistureMin,
+        ph_min: defaults.phMin,
+        ph_max: defaults.phMax,
+        temp_warning_max: defaults.tempWarningMax
+      });
     }
   };
 
@@ -545,7 +639,12 @@ export default function Settings() {
                   <input 
                     type="checkbox" 
                     checked={security.twoFactorEnabled}
-                    onChange={(e) => setSecurity(s => ({ ...s, twoFactorEnabled: e.target.checked }))}
+                    onChange={async (e) => {
+                      const checked = e.target.checked;
+                      setSecurity(s => ({ ...s, twoFactorEnabled: checked }));
+                      await syncSettingsToSupabase({ two_factor_enabled: checked });
+                      triggerToast(checked ? 'Two-Factor Authentication enabled!' : 'Two-Factor Authentication disabled.');
+                    }}
                   />
                   <span className="slider"></span>
                 </label>

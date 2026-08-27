@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
 import { 
   Plus, 
   Search, 
@@ -239,13 +240,80 @@ export default function ActivityGallery() {
     imgUrl: ''
   });
 
+  const fetchLogs = async () => {
+    try {
+      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        setLogs(initialGalleryLogs);
+        return;
+      }
+
+      // Fetch logs from table
+      const { data: logsData, error: logsError } = await supabase
+        .from('gallery_logs')
+        .select('*')
+        .order('id', { ascending: false });
+
+      if (logsError) throw logsError;
+
+      // Fetch comments from table
+      const { data: commentsData, error: commentsError } = await supabase
+        .from('gallery_comments')
+        .select('*');
+
+      if (commentsError) throw commentsError;
+
+      // Format and join logs with their comments
+      const formattedLogs = logsData.map(log => {
+        const logComments = (commentsData || [])
+          .filter(c => c.log_id === log.id)
+          .map(c => ({
+            id: c.id,
+            author: c.author,
+            avatar: c.avatar,
+            text: c.text,
+            time: c.time
+          }));
+
+        return {
+          id: log.id,
+          title: log.title,
+          crop: log.crop,
+          category: log.category,
+          img: log.img,
+          date: log.date,
+          author: {
+            name: log.author_name,
+            avatar: log.author_avatar
+          },
+          description: log.description,
+          telemetry: log.telemetry || { stage: 'N/A', moisture: 'N/A', ph: 'N/A', temp: 'N/A' },
+          comments: logComments
+        };
+      });
+
+      if (formattedLogs.length === 0) {
+        setLogs(initialGalleryLogs);
+      } else {
+        setLogs(formattedLogs);
+      }
+    } catch (err) {
+      console.warn('Supabase tables not configured yet or connection failed, using initial mock data.', err.message);
+      setLogs(initialGalleryLogs);
+    }
+  };
+
+  // Fetch logs and comments on mount
+  useEffect(() => {
+    fetchLogs();
+  }, []);
+
   // Calculate Overview details
   const totalLogs = logs.length;
   const cropCoverageCount = new Set(logs.map(l => l.crop).filter(c => c !== 'None')).size;
   const totalContributorsCount = new Set(logs.map(l => l.author.name)).size;
 
   // Add a comment to active lightbox image
-  const handleAddComment = (e) => {
+  const handleAddComment = async (e) => {
     e.preventDefault();
     if (!newCommentText.trim()) return;
 
@@ -257,11 +325,11 @@ export default function ActivityGallery() {
       time: 'Just now'
     };
 
+    // Optimistic UI updates
     setLogs(prevLogs => 
       prevLogs.map(log => {
         if (log.id === activeLog.id) {
           const updatedComments = [...log.comments, newComment];
-          // Keep activeLog modal updated in real-time
           setActiveLog(prev => ({ ...prev, comments: updatedComments }));
           return { ...log, comments: updatedComments };
         }
@@ -270,15 +338,57 @@ export default function ActivityGallery() {
     );
 
     setNewCommentText('');
+
+    // Write to Supabase
+    try {
+      if (import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        const { error } = await supabase
+          .from('gallery_comments')
+          .insert([{
+            log_id: activeLog.id,
+            author: newComment.author,
+            avatar: newComment.avatar,
+            text: newComment.text,
+            time: newComment.time
+          }]);
+        
+        if (error) {
+          console.warn('Could not insert comment in Supabase (possibly a local mock log):', error.message);
+        } else {
+          fetchLogs(); // sync DB IDs
+        }
+      }
+    } catch (err) {
+      console.error('Error writing comment to Supabase:', err);
+    }
   };
 
   // Delete media log entry
-  const handleDeleteLog = (e, id, title) => {
+  const handleDeleteLog = async (e, id, title) => {
     e.stopPropagation(); // Avoid opening Lightbox
     if (window.confirm(`Are you sure you want to delete the media log: "${title}"?`)) {
+      // Local UI update
       setLogs(prev => prev.filter(l => l.id !== id));
       if (activeLog && activeLog.id === id) {
         setActiveLog(null);
+      }
+
+      // Delete from Supabase
+      try {
+        if (import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY) {
+          const { error } = await supabase
+            .from('gallery_logs')
+            .delete()
+            .eq('id', id);
+          
+          if (error) {
+            console.warn('Could not delete log from Supabase (possibly a local mock log):', error.message);
+          } else {
+            fetchLogs();
+          }
+        }
+      } catch (err) {
+        console.error('Error deleting log from Supabase:', err);
       }
     }
   };
@@ -307,7 +417,7 @@ export default function ActivityGallery() {
   };
 
   // Handle saving log form submission
-  const handleSaveLog = (e) => {
+  const handleSaveLog = async (e) => {
     e.preventDefault();
     if (!formData.title.trim()) {
       alert('Caption title is required.');
@@ -338,8 +448,36 @@ export default function ActivityGallery() {
       comments: []
     };
 
+    // Local UI update
     setLogs(prev => [savedLog, ...prev]);
     setIsDrawerOpen(false);
+
+    // Sync to Supabase
+    try {
+      if (import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        const { error } = await supabase
+          .from('gallery_logs')
+          .insert([{
+            title: savedLog.title,
+            crop: savedLog.crop,
+            category: savedLog.category,
+            img: savedLog.img,
+            date: savedLog.date,
+            author_name: savedLog.author.name,
+            author_avatar: savedLog.author.avatar,
+            description: savedLog.description,
+            telemetry: savedLog.telemetry
+          }]);
+
+        if (error) {
+          console.warn('Saved locally, but failed to sync to Supabase: ', error.message);
+        } else {
+          fetchLogs();
+        }
+      }
+    } catch (err) {
+      console.error('Error saving log to Supabase:', err);
+    }
   };
 
   // Filtered logs
