@@ -10,9 +10,7 @@ import {
   Sprout, 
   Plus, 
   Image as ImageIcon, 
-  Check, 
-  AlertCircle,
-  FileText
+  AlertCircle
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -28,94 +26,47 @@ import {
 } from 'recharts';
 
 export default function Dashboard() {
-  // Sales Line Chart Data
-  const salesData = [
-    { name: 'May 1', sales: 100000 },
-    { name: 'May 3', sales: 220000 },
-    { name: 'May 6', sales: 180000 },
-    { name: 'May 8', sales: 290000 },
-    { name: 'May 11', sales: 490000 },
-    { name: 'May 13', sales: 380000 },
-    { name: 'May 16', sales: 580000 },
-    { name: 'May 18', sales: 490000 },
-    { name: 'May 21', sales: 620000 },
-    { name: 'May 23', sales: 550000 },
-    { name: 'May 26', sales: 790000 },
-    { name: 'May 28', sales: 720000 },
-    { name: 'May 31', sales: 980000 }
-  ];
-
-  // Doughnut Chart Data
-  const statusData = [
-    { name: 'Pending', value: 28, percentage: '20.9%', color: '#FBC02D' },
-    { name: 'Processing', value: 38, percentage: '28.4%', color: '#81C784' },
-    { name: 'Delivered', value: 56, percentage: '41.8%', color: '#163A24' },
-    { name: 'Cancelled', value: 12, percentage: '9.0%', color: '#D94A38' }
-  ];
-
-  // Recent Orders Data
-  const recentOrders = [
-    { 
-      id: 'RF-2024-0134', 
-      customer: 'John Smith', 
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=60',
-      date: 'May 30, 2024', 
-      status: 'pending', 
-      total: '₦45,500' 
-    },
-    { 
-      id: 'RF-2024-0133', 
-      customer: 'Mary Johnson', 
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=60',
-      date: 'May 30, 2024', 
-      status: 'processing', 
-      total: '₦32,000' 
-    },
-    { 
-      id: 'RF-2024-0132', 
-      customer: 'David Brown', 
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=60',
-      date: 'May 29, 2024', 
-      status: 'delivered', 
-      total: '₦78,000' 
-    },
-    { 
-      id: 'RF-2024-0131', 
-      customer: 'Sarah Williams', 
-      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&auto=format&fit=crop&q=60',
-      date: 'May 29, 2024', 
-      status: 'delivered', 
-      total: '₦21,500' 
-    },
-    { 
-      id: 'RF-2024-0130', 
-      customer: 'Michael Davis', 
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60',
-      date: 'May 28, 2024', 
-      status: 'cancelled', 
-      total: '₦12,000' 
-    }
-  ];
-
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [galleryLogs, setGalleryLogs] = useState([]);
+  const defaultTime = useMemo(() => new Date(), []);
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchDashboardData = async () => {
       try {
         if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
           return;
         }
-        const { data, error } = await supabase
+
+        // Fetch products
+        const { data: productsData, error: productsError } = await supabase
           .from('products')
           .select('*');
-        if (error) throw error;
-        setProducts(data || []);
+        if (productsError) throw productsError;
+        setProducts(productsData || []);
+
+        // Fetch orders
+        const { data: ordersData, error: ordersError } = await supabase
+          .from('orders')
+          .select('*');
+        if (ordersError) throw ordersError;
+        setOrders(ordersData || []);
+
+        // Fetch latest gallery logs for homepage recent activity logs feed
+        const { data: logsData, error: logsError } = await supabase
+          .from('gallery_logs')
+          .select('id, title, author_name, created_at')
+          .order('created_at', { ascending: false })
+          .limit(5);
+        if (!logsError) {
+          setGalleryLogs(logsData || []);
+        }
       } catch (err) {
-        console.error('Error fetching dashboard products:', err.message);
+        console.error('Error fetching dashboard data:', err.message);
       }
     };
-    fetchProducts();
+    fetchDashboardData();
   }, []);
 
   // Filter low stock items: quantity is less than or equal to warning minimum limit
@@ -123,44 +74,129 @@ export default function Dashboard() {
   const lowStockCount = lowStockItems.length;
   const activeProductsCount = products.filter(item => item.status === 'published').length;
 
-  // Recent Activities Data
-  const recentActivities = [
-    {
-      id: 1,
-      text: <span>New order <strong>#RF-2024-0134</strong></span>,
-      time: '2 minutes ago',
-      icon: <Plus size={14} />,
-      colorClass: 'green'
-    },
-    {
-      id: 2,
-      text: <span>Product <strong>"Habanero Pepper"</strong> stock updated</span>,
-      time: '15 minutes ago',
-      icon: <FileText size={14} />,
-      colorClass: 'green'
-    },
-    {
-      id: 3,
-      text: <span>New photos added to <strong>Tomato Harvesting</strong></span>,
-      time: '1 hour ago',
-      icon: <ImageIcon size={14} />,
-      colorClass: 'green'
-    },
-    {
-      id: 4,
-      text: <span>Low stock alert for <strong>African Corn</strong></span>,
-      time: '2 hours ago',
-      icon: <AlertCircle size={14} />,
-      colorClass: 'red'
-    },
-    {
-      id: 5,
-      text: <span>Order <strong>#RF-2024-0131</strong> delivered</span>,
-      time: '3 hours ago',
-      icon: <Check size={14} />,
-      colorClass: 'green'
+  // Calculate dynamic Total Revenue
+  const totalRevenue = useMemo(() => {
+    return orders.reduce((sum, order) => {
+      if (order.status === 'cancelled') return sum;
+      const itemsTotal = (order.items || []).reduce((itemSum, item) => itemSum + (item.price * item.qty), 0);
+      const deliveryFee = Number(order.delivery_fee || 0);
+      return sum + itemsTotal + deliveryFee;
+    }, 0);
+  }, [orders]);
+
+  // Dynamic status distribution for Pie Chart
+  const statusData = useMemo(() => {
+    const counts = { pending: 0, processing: 0, delivered: 0, cancelled: 0 };
+    orders.forEach(o => {
+      const s = o.status?.toLowerCase();
+      if (counts[s] !== undefined) {
+        counts[s]++;
+      } else {
+        counts.pending++;
+      }
+    });
+    
+    const total = orders.length || 1;
+    
+    return [
+      { name: 'Pending', value: counts.pending, percentage: `${((counts.pending / total) * 100).toFixed(1)}%`, color: '#FBC02D' },
+      { name: 'Processing', value: counts.processing, percentage: `${((counts.processing / total) * 100).toFixed(1)}%`, color: '#81C784' },
+      { name: 'Delivered', value: counts.delivered, percentage: `${((counts.delivered / total) * 100).toFixed(1)}%`, color: '#163A24' },
+      { name: 'Cancelled', value: counts.cancelled, percentage: `${((counts.cancelled / total) * 100).toFixed(1)}%`, color: '#D94A38' }
+    ];
+  }, [orders]);
+
+  // Dynamic recent orders table feed (latest 5 orders)
+  const recentOrders = useMemo(() => {
+    return [...orders]
+      .sort((a, b) => new Date(`${b.date} ${b.time}`) - new Date(`${a.date} ${a.time}`))
+      .slice(0, 5)
+      .map(o => ({
+        id: o.id,
+        customer: o.customer?.name || 'N/A',
+        avatar: o.customer?.avatar || '',
+        date: o.date,
+        status: o.status,
+        total: `₦${((o.items || []).reduce((itemSum, item) => itemSum + (item.price * item.qty), 0) + Number(o.delivery_fee || 0)).toLocaleString()}`
+      }));
+  }, [orders]);
+
+  // Dynamic Sales Over Time Line Chart
+  const salesData = useMemo(() => {
+    const grouped = {};
+    orders.forEach(o => {
+      if (o.status === 'cancelled') return;
+      let label = o.date;
+      try {
+        const d = new Date(o.date);
+        if (!isNaN(d.getTime())) {
+          label = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        }
+      } catch {}
+      
+      const itemsTotal = (o.items || []).reduce((itemSum, item) => itemSum + (item.price * item.qty), 0);
+      const deliveryFee = Number(o.delivery_fee || 0);
+      const orderTotal = itemsTotal + deliveryFee;
+      
+      grouped[label] = (grouped[label] || 0) + orderTotal;
+    });
+
+    const list = Object.keys(grouped).map(date => ({
+      name: date,
+      sales: grouped[date]
+    }));
+
+    list.sort((a, b) => new Date(a.name) - new Date(b.name));
+
+    if (list.length === 0) {
+      return [
+        { name: 'No Data', sales: 0 }
+      ];
     }
-  ];
+    return list;
+  }, [orders]);
+
+  // Dynamic recent activity events stream
+  const recentActivities = useMemo(() => {
+    const list = [];
+
+    orders.forEach(o => {
+      list.push({
+        id: `order-${o.id}`,
+        timestamp: new Date(`${o.date} ${o.time}`),
+        text: <span>New order <strong>#{o.id}</strong> placed by {o.customer?.name}</span>,
+        time: `${o.date}, ${o.time}`,
+        icon: <Plus size={14} />,
+        colorClass: 'green'
+      });
+    });
+
+    lowStockItems.forEach(item => {
+      list.push({
+        id: `stock-${item.id}`,
+        timestamp: item.created_at ? new Date(item.created_at) : defaultTime,
+        text: <span>Low stock warning: <strong>{item.name}</strong> ({item.qty} {item.unit} left)</span>,
+        time: 'Needs harvest/restock',
+        icon: <AlertCircle size={14} />,
+        colorClass: 'red'
+      });
+    });
+
+    galleryLogs.forEach(log => {
+      list.push({
+        id: `log-${log.id}`,
+        timestamp: log.created_at ? new Date(log.created_at) : defaultTime,
+        text: <span>New photo log <strong>"{log.title}"</strong> uploaded</span>,
+        time: log.author_name ? `by ${log.author_name}` : 'Recent upload',
+        icon: <ImageIcon size={14} />,
+        colorClass: 'green'
+      });
+    });
+
+    return list
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 5);
+  }, [orders, lowStockItems, galleryLogs, defaultTime]);
 
   return (
     <div>
@@ -168,17 +204,17 @@ export default function Dashboard() {
       <div className="stat-cards-grid">
         <StatCard 
           label="Total Revenue" 
-          value="₦4,250,000" 
+          value={`₦${totalRevenue.toLocaleString()}`} 
           icon={<DollarSign size={20} />} 
           iconBgType="green-bg"
-          footer={{ prefix: 'This Month ', badgeText: '↑ 18.5%', badgeType: 'up', suffix: ' vs last month' }}
+          footer={{ prefix: 'Cumulative Storefront Earnings' }}
         />
         <StatCard 
           label="Total Orders" 
-          value="134" 
+          value={orders.length} 
           icon={<ShoppingCart size={20} />} 
           iconBgType="green-bg"
-          footer={{ prefix: 'This Month ', badgeText: '↑ 12.6%', badgeType: 'up', suffix: ' vs last month' }}
+          footer={{ prefix: 'Total Sales Leads Captured' }}
         />
         <StatCard 
           label="Low Stock Items" 
@@ -273,7 +309,7 @@ export default function Dashboard() {
                 </ResponsiveContainer>
                 
                 <div className="pie-chart-center-label">
-                  <span className="pie-chart-center-value">134</span>
+                  <span className="pie-chart-center-value">{orders.length}</span>
                   <span className="pie-chart-center-text">Total</span>
                 </div>
               </div>
