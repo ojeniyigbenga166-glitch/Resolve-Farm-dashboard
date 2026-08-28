@@ -6,7 +6,6 @@ import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
 import Inventory from './pages/Inventory';
 import Orders from './pages/Orders';
-import FarmActivities from './pages/FarmActivities';
 import ActivityGallery from './pages/ActivityGallery';
 import Settings from './pages/Settings';
 
@@ -42,7 +41,6 @@ export default function App() {
           <Route path="products" element={<Products />} />
           <Route path="inventory" element={<Inventory />} />
           <Route path="orders" element={<Orders />} />
-          <Route path="farm-activities" element={<FarmActivities />} />
           <Route path="activity-gallery" element={<ActivityGallery />} />
           <Route path="settings" element={<Settings />} />
         </Route>

@@ -16,8 +16,7 @@ export default function Header({ onToggleMenu }) {
         return 'Inventory Tracking';
       case '/orders':
         return 'Orders Processing';
-      case '/farm-activities':
-        return 'Farm Activities Log';
+
       case '/activity-gallery':
         return 'Farm Gallery';
       case '/settings':

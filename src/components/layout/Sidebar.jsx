@@ -5,7 +5,6 @@ import {
   ShoppingBag, 
   Layers, 
   ShoppingCart, 
-  Sprout, 
   Image as ImageIcon, 
   Settings, 
   LogOut 
@@ -31,7 +30,6 @@ export default function Sidebar({ isOpen, onClose }) {
     {
       title: "Farm Management",
       items: [
-        { name: "Farm Activities", path: "/farm-activities", icon: <Sprout size={18} /> },
         { name: "Activity Gallery", path: "/activity-gallery", icon: <ImageIcon size={18} /> }
       ]
     },

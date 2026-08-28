@@ -6,6 +6,7 @@ import {
   DollarSign, 
   ShoppingCart, 
   Package, 
+  Settings, 
   Sprout, 
   Plus, 
   Image as ImageIcon, 
@@ -422,12 +423,12 @@ export default function Dashboard() {
             </button>
             <button 
               className="quick-action-btn"
-              onClick={() => navigate('/farm-activities')}
+              onClick={() => navigate('/settings')}
             >
               <div className="quick-action-icon-circle">
-                <Sprout size={18} />
+                <Settings size={18} />
               </div>
-              <span className="quick-action-label">Add Activity</span>
+              <span className="quick-action-label">System Settings</span>
             </button>
             <button 
               className="quick-action-btn"
