@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { 
   User, 
-  Sliders, 
   Bell, 
   Shield, 
   Save, 
@@ -10,10 +9,7 @@ import {
   Check, 
   Lock, 
   Upload, 
-  Loader2, 
-  Sprout, 
-  Thermometer, 
-  RefreshCcw 
+  Loader2 
 } from 'lucide-react';
 
 const presetAvatars = [
@@ -38,14 +34,6 @@ export default function Settings() {
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=60'
   });
 
-  const [thresholds, setThresholds] = useState({
-    tempUnit: '°C',
-    areaUnit: 'Hectares',
-    moistureMin: 60,
-    phMin: 6.0,
-    phMax: 7.2,
-    tempWarningMax: 35
-  });
 
   const [notifications, setNotifications] = useState({
     lowStockAlert: true,
@@ -120,14 +108,7 @@ export default function Settings() {
           location: data.profile_location || '',
           avatar: data.profile_avatar
         });
-        setThresholds({
-          tempUnit: data.temp_unit,
-          areaUnit: data.area_unit,
-          moistureMin: data.moisture_min,
-          phMin: Number(data.ph_min),
-          phMax: Number(data.ph_max),
-          tempWarningMax: data.temp_warning_max
-        });
+
         setNotifications({
           lowStockAlert: data.low_stock_alert,
           orderSuccessAlert: data.order_success_alert,
@@ -176,19 +157,7 @@ export default function Settings() {
     });
   };
 
-  // Thresholds Form Save
-  const handleThresholdsSubmit = async (e) => {
-    e.preventDefault();
-    triggerToast('Agricultural thresholds updated successfully!');
-    await syncSettingsToSupabase({
-      temp_unit: thresholds.tempUnit,
-      area_unit: thresholds.areaUnit,
-      moisture_min: thresholds.moistureMin,
-      ph_min: thresholds.phMin,
-      ph_max: thresholds.phMax,
-      temp_warning_max: thresholds.tempWarningMax
-    });
-  };
+
 
   // Notification Preferences Save
   const handleNotificationsSubmit = async (e) => {
@@ -229,32 +198,10 @@ export default function Settings() {
     }, 2000);
   };
 
-  const handleResetThresholds = async () => {
-    if (window.confirm('Reset thresholds to default parameters?')) {
-      const defaults = {
-        tempUnit: '°C',
-        areaUnit: 'Hectares',
-        moistureMin: 60,
-        phMin: 6.0,
-        phMax: 7.2,
-        tempWarningMax: 35
-      };
-      setThresholds(defaults);
-      triggerToast('Restored default parameters.');
-      await syncSettingsToSupabase({
-        temp_unit: defaults.tempUnit,
-        area_unit: defaults.areaUnit,
-        moisture_min: defaults.moistureMin,
-        ph_min: defaults.phMin,
-        ph_max: defaults.phMax,
-        temp_warning_max: defaults.tempWarningMax
-      });
-    }
-  };
+
 
   const tabs = [
     { id: 'profile', label: 'Farm Profile', icon: <User size={16} /> },
-    { id: 'thresholds', label: 'Soil & Crop Thresholds', icon: <Sliders size={16} /> },
     { id: 'notifications', label: 'Notifications', icon: <Bell size={16} /> },
     { id: 'security', label: 'System & Security', icon: <Shield size={16} /> }
   ];
@@ -433,109 +380,7 @@ export default function Settings() {
           </form>
         )}
 
-        {/* THRESHOLDS TAB */}
-        {activeTab === 'thresholds' && (
-          <form onSubmit={handleThresholdsSubmit}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h3 className="card-title" style={{ fontSize: '1.1rem' }}>Soil & Telemetry Warning Parameters</h3>
-              <button 
-                type="button" 
-                className="secondary-btn" 
-                onClick={handleResetThresholds}
-                style={{ flex: 'none', padding: '0.4rem 0.75rem', display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem' }}
-              >
-                <RefreshCcw size={12} />
-                <span>Restore Defaults</span>
-              </button>
-            </div>
 
-            <div className="form-row" style={{ marginBottom: '1.5rem' }}>
-              <div className="form-group">
-                <label>Temperature Unit</label>
-                <select 
-                  value={thresholds.tempUnit} 
-                  onChange={(e) => setThresholds(t => ({ ...t, tempUnit: e.target.value }))}
-                >
-                  <option value="°C">Celsius (°C)</option>
-                  <option value="°F">Fahrenheit (°F)</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Land Area Unit</label>
-                <select 
-                  value={thresholds.areaUnit} 
-                  onChange={(e) => setThresholds(t => ({ ...t, areaUnit: e.target.value }))}
-                >
-                  <option value="Hectares">Hectares (ha)</option>
-                  <option value="Acres">Acres (ac)</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <label style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                  <Sprout size={14} style={{ color: 'var(--color-success)' }} />
-                  <span>Minimum Soil Moisture Alert Level</span>
-                </label>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-forest)' }}>{thresholds.moistureMin}%</span>
-              </div>
-              <input 
-                type="range" 
-                min="10" 
-                max="80" 
-                value={thresholds.moistureMin} 
-                onChange={(e) => setThresholds(t => ({ ...t, moistureMin: parseInt(e.target.value) }))}
-                style={{ width: '100%', accentColor: 'var(--color-success)', cursor: 'pointer' }}
-              />
-              <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '0.25rem', display: 'block' }}>
-                Triggers warning notifications in telemetry trackers if moisture falls below this threshold.
-              </span>
-            </div>
-
-            <div className="form-row" style={{ marginBottom: '1.5rem' }}>
-              <div className="form-group">
-                <label>Optimal Crop pH Min</label>
-                <input 
-                  type="number" 
-                  step="0.1" 
-                  min="4.0" 
-                  max="8.0"
-                  value={thresholds.phMin} 
-                  onChange={(e) => setThresholds(t => ({ ...t, phMin: parseFloat(e.target.value) }))}
-                />
-              </div>
-              <div className="form-group">
-                <label>Optimal Crop pH Max</label>
-                <input 
-                  type="number" 
-                  step="0.1" 
-                  min="6.0" 
-                  max="10.0"
-                  value={thresholds.phMax} 
-                  onChange={(e) => setThresholds(t => ({ ...t, phMax: parseFloat(e.target.value) }))}
-                />
-              </div>
-            </div>
-
-            <div className="form-group" style={{ marginBottom: '2rem' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <Thermometer size={14} style={{ color: 'var(--color-tomato)' }} />
-                <span>Maximum Field Temperature Warning Threshold ({thresholds.tempUnit})</span>
-              </label>
-              <input 
-                type="number" 
-                value={thresholds.tempWarningMax} 
-                onChange={(e) => setThresholds(t => ({ ...t, tempWarningMax: parseInt(e.target.value) }))}
-              />
-            </div>
-
-            <button type="submit" className="primary-btn" style={{ minWidth: '130px', justifyContent: 'center' }}>
-              <Save size={16} />
-              <span>Save Parameters</span>
-            </button>
-          </form>
-        )}
 
         {/* NOTIFICATIONS TAB */}
         {activeTab === 'notifications' && (
