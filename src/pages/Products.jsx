@@ -227,6 +227,19 @@ export default function Products() {
       img: formData.img || '' // Fallback
     };
 
+    if (drawerMode === 'add') {
+      savedProduct.qty = 0;
+      savedProduct.min = 50;
+      savedProduct.max = 500;
+    } else {
+      const current = products.find(p => p.id === editingProductId);
+      if (current) {
+        savedProduct.qty = current.qty;
+        savedProduct.min = current.min;
+        savedProduct.max = current.max;
+      }
+    }
+
     // Optimistic UI updates
     if (drawerMode === 'add') {
       const localId = Date.now();

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import { 
   Search, 
-  Filter, 
   X, 
   Check, 
   AlertTriangle, 
@@ -14,80 +14,9 @@ import {
 } from 'lucide-react';
 import StatCard from '../components/ui/StatCard';
 
-import carrotsImg from '../assets/organic_carrots.png';
-import tomatoesImg from '../assets/roma_tomatoes.png'; // Used for heirloom tomatoes
-import beansImg from '../assets/green_beans.png';
-import cornImg from '../assets/sweet_corn.png';
-import habaneroImg from '../assets/habanero_pepper.png';
-import cassavaImg from '../assets/cassava_tubers.png';
-
-// Seeding Initial Mock Inventory Data
-const initialInventory = [
-  {
-    id: 1,
-    name: 'Organic Carrots',
-    category: 'Root Vegetables',
-    qty: 450,
-    min: 100,
-    max: 500,
-    unit: 'kg',
-    img: carrotsImg
-  },
-  {
-    id: 2,
-    name: 'Heirloom Tomatoes',
-    category: 'Nightshades',
-    qty: 12,
-    min: 50,
-    max: 150,
-    unit: 'kg',
-    img: tomatoesImg
-  },
-  {
-    id: 3,
-    name: 'Green Beans',
-    category: 'Legumes',
-    qty: 210,
-    min: 80,
-    max: 300,
-    unit: 'kg',
-    img: beansImg
-  },
-  {
-    id: 4,
-    name: 'Sweet Corn',
-    category: 'Grains',
-    qty: 0,
-    min: 200,
-    max: 1000,
-    unit: 'ears',
-    img: cornImg
-  },
-  {
-    id: 5,
-    name: 'Habanero Pepper',
-    category: 'Peppers',
-    qty: 8,
-    min: 20,
-    max: 100,
-    unit: 'kg',
-    img: habaneroImg
-  },
-  {
-    id: 6,
-    name: 'Cassava Tubers',
-    category: 'Tubers',
-    qty: 150,
-    min: 30,
-    max: 200,
-    unit: 'bags',
-    img: cassavaImg
-  }
-];
-
 export default function Inventory() {
   const navigate = useNavigate();
-  const [inventory, setInventory] = useState(initialInventory);
+  const [inventory, setInventory] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState('All'); // 'All', 'in-stock', 'low', 'out-of-stock'
@@ -96,6 +25,29 @@ export default function Inventory() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [qtyInput, setQtyInput] = useState('');
+
+  const fetchInventory = async () => {
+    try {
+      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('id', { ascending: false });
+
+      if (error) throw error;
+      setInventory(data || []);
+    } catch (err) {
+      console.error('Error fetching inventory from Supabase:', err.message);
+    }
+  };
+
+  // Fetch inventory data on mount
+  useEffect(() => {
+    fetchInventory();
+  }, []);
 
   // Dynamically calculate statuses
   const getItemStatus = (item) => {
@@ -125,19 +77,34 @@ export default function Inventory() {
   };
 
   // Save updated stock quantity
-  const handleSaveStock = (e) => {
+  const handleSaveStock = async (e) => {
     e.preventDefault();
     if (qtyInput === '' || isNaN(qtyInput) || Number(qtyInput) < 0) {
       alert('Please enter a valid stock level (0 or positive).');
       return;
     }
 
+    // Optimistic UI updates
     setInventory(prevInventory => 
       prevInventory.map(item => 
         item.id === selectedItem.id ? { ...item, qty: Number(qtyInput) } : item
       )
     );
     setIsModalOpen(false);
+
+    try {
+      if (import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        const { error } = await supabase
+          .from('products')
+          .update({ qty: Number(qtyInput) })
+          .eq('id', selectedItem.id);
+        
+        if (error) throw error;
+        fetchInventory(); // reload to sync
+      }
+    } catch (err) {
+      console.error('Error updating stock level in Supabase:', err);
+    }
   };
 
   // Filter logic

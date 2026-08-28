@@ -85,6 +85,9 @@ CREATE TABLE IF NOT EXISTS public.products (
     unit TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'published',
     img TEXT NOT NULL, -- Base64 Data URL or storage bucket URL
+    qty INT NOT NULL DEFAULT 0,
+    min INT NOT NULL DEFAULT 50,
+    max INT NOT NULL DEFAULT 500,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
