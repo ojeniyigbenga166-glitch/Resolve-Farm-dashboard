@@ -5,7 +5,6 @@ import {
   Search, 
   X, 
   Send, 
-  User, 
   Image as ImageIcon,
   Trash2, 
   Sprout,
@@ -201,8 +200,6 @@ export default function ActivityGallery() {
 
   // Calculate Overview details
   const totalLogs = logs.length;
-  const cropCoverageCount = new Set(logs.map(l => l.crop).filter(c => c !== 'None')).size;
-  const totalContributorsCount = new Set(logs.map(l => l.author.name)).size;
 
   // Add a comment to active lightbox image
   const handleAddComment = async (e) => {
@@ -398,24 +395,6 @@ export default function ActivityGallery() {
           </div>
           <div className="summary-card-icon" style={{ backgroundColor: 'rgba(22, 58, 36, 0.05)', color: 'var(--color-forest)' }}>
             <ImageIcon size={16} />
-          </div>
-        </div>
-        <div className="summary-ribbon-card">
-          <div className="summary-card-info">
-            <span className="summary-card-label">Crops Tracked</span>
-            <span className="summary-card-value">{cropCoverageCount} Crops</span>
-          </div>
-          <div className="summary-card-icon" style={{ backgroundColor: 'rgba(79, 138, 91, 0.08)', color: 'var(--color-success)' }}>
-            <Sprout size={16} />
-          </div>
-        </div>
-        <div className="summary-ribbon-card">
-          <div className="summary-card-info">
-            <span className="summary-card-label">Contributors</span>
-            <span className="summary-card-value">{totalContributorsCount} Staff</span>
-          </div>
-          <div className="summary-card-icon" style={{ backgroundColor: 'rgba(59, 130, 246, 0.05)', color: '#3b82f6' }}>
-            <User size={16} />
           </div>
         </div>
       </div>
