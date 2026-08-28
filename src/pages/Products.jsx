@@ -16,73 +16,9 @@ import {
   EyeOff
 } from 'lucide-react';
 
-import habaneroImg from '../assets/habanero_pepper.png';
-import cornImg from '../assets/african_corn.png';
-import tomatoesImg from '../assets/roma_tomatoes.png';
-import pepperImg from '../assets/yellow_bell_pepper.png';
-import cassavaImg from '../assets/cassava_tubers.png';
-import potatoesImg from '../assets/sweet_potatoes.png';
-
-// Initial Mock Product Data
-const initialProducts = [
-  {
-    id: 1,
-    name: 'Habanero Pepper',
-    category: 'Peppers',
-    price: 1800,
-    unit: 'kg',
-    status: 'published',
-    img: habaneroImg
-  },
-  {
-    id: 2,
-    name: 'African Corn',
-    category: 'Corn',
-    price: 2200,
-    unit: 'bag',
-    status: 'published',
-    img: cornImg
-  },
-  {
-    id: 3,
-    name: 'Roma Tomatoes',
-    category: 'Tomatoes',
-    price: 1500,
-    unit: 'kg',
-    status: 'published',
-    img: tomatoesImg
-  },
-  {
-    id: 4,
-    name: 'Yellow Bell Pepper',
-    category: 'Peppers',
-    price: 2000,
-    unit: 'kg',
-    status: 'draft',
-    img: pepperImg
-  },
-  {
-    id: 5,
-    name: 'Cassava Tubers',
-    category: 'Tubers',
-    price: 900,
-    unit: 'bag',
-    status: 'published',
-    img: cassavaImg
-  },
-  {
-    id: 6,
-    name: 'Sweet Potatoes',
-    category: 'Tubers',
-    price: 1100,
-    unit: 'kg',
-    status: 'draft',
-    img: potatoesImg
-  }
-];
 
 export default function Products() {
-  const [products, setProducts] = useState(initialProducts);
+  const [products, setProducts] = useState([]);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'table'
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -108,7 +44,6 @@ export default function Products() {
   const fetchProducts = async () => {
     try {
       if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-        setProducts(initialProducts);
         return;
       }
 
@@ -118,11 +53,9 @@ export default function Products() {
         .order('id', { ascending: false });
 
       if (error) throw error;
-
       setProducts(data || []);
     } catch (err) {
-      console.warn('Supabase products table not configured or connection failed, using initial mock data.', err.message);
-      setProducts(initialProducts);
+      console.error('Error fetching products from Supabase:', err.message);
     }
   };
 
@@ -291,7 +224,7 @@ export default function Products() {
       price: Number(formData.price),
       unit: formData.unit,
       status: formData.status,
-      img: formData.img || habaneroImg // Fallback
+      img: formData.img || '' // Fallback
     };
 
     // Optimistic UI updates

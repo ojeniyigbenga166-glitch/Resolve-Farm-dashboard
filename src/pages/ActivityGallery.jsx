@@ -12,13 +12,6 @@ import {
   Check
 } from 'lucide-react';
 
-// Import image assets
-import habaneroImg from '../assets/habanero_pepper.png';
-import cornImg from '../assets/african_corn.png';
-import tomatoesImg from '../assets/roma_tomatoes.png';
-import pepperImg from '../assets/yellow_bell_pepper.png';
-import cassavaImg from '../assets/cassava_tubers.png';
-import potatoesImg from '../assets/sweet_potatoes.png';
 
 // Predefined available categories
 const categoriesList = [
@@ -51,127 +44,8 @@ const staffList = [
   { name: 'Chioma Ade', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=60' }
 ];
 
-// Initial mock gallery logs
-const initialGalleryLogs = [
-  {
-    id: 1,
-    title: 'Tomato Flowering Stage in Block A',
-    crop: 'Roma Tomatoes',
-    category: 'Growth Progress',
-    img: tomatoesImg,
-    date: '2026-08-25',
-    author: staffList[0],
-    description: 'First flowering nodes observed in row 3 to 10 of Field Block A. Soil moisture levels are hovering around 70%. Pollinator activity is excellent. No pests observed.',
-    telemetry: {
-      stage: 'Flowering',
-      moisture: '70%',
-      ph: '6.4',
-      temp: '28°C'
-    },
-    comments: [
-      { id: 1001, author: 'Baba Tunde', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=60', text: 'Flower density looks much better than last season.', time: '2 days ago' },
-      { id: 1002, author: 'Chioma Ade', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=60', text: 'Keep moisture high this week to prevent early bud drop.', time: '1 day ago' }
-    ]
-  },
-  {
-    id: 2,
-    title: 'Habanero Peppers Color Turn',
-    crop: 'Habanero Pepper',
-    category: 'Growth Progress',
-    img: habaneroImg,
-    date: '2026-08-24',
-    author: staffList[1],
-    description: 'Peppers are starting to ripen and change color from dark green to bright orange/red. Harvesting scheduled to begin next Monday.',
-    telemetry: {
-      stage: 'Ripening',
-      moisture: '65%',
-      ph: '6.2',
-      temp: '30°C'
-    },
-    comments: [
-      { id: 2001, author: 'Ngozi Obi', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60', text: 'Ready to pick on Monday. I will prepare the crates.', time: '2 days ago' }
-    ]
-  },
-  {
-    id: 3,
-    title: 'Maize Height Performance Block C',
-    crop: 'African Corn',
-    category: 'Growth Progress',
-    img: cornImg,
-    date: '2026-08-22',
-    author: staffList[2],
-    description: 'Corn stands have reached average heights of 1.8m. Stalk width is excellent. Color is deep forest green, indicating adequate nitrogen availability.',
-    telemetry: {
-      stage: 'Vegetative (V8)',
-      moisture: '68%',
-      ph: '6.5',
-      temp: '29°C'
-    },
-    comments: [
-      { id: 3001, author: 'Chioma Ade', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=60', text: 'Fertigation cycle in Block C is showing great results.', time: '3 days ago' }
-    ]
-  },
-  {
-    id: 4,
-    title: 'Cassava Harvest Selection Block B',
-    crop: 'Cassava Tubers',
-    category: 'Harvesting',
-    img: cassavaImg,
-    date: '2026-08-19',
-    author: staffList[3],
-    description: 'First block harvest. Tuber sizing checked. Average weight per plant stands at 4.2kg, exceeding our 3.8kg baseline.',
-    telemetry: {
-      stage: 'Harvest Ready',
-      moisture: '58%',
-      ph: '5.9',
-      temp: '27°C'
-    },
-    comments: [
-      { id: 4001, author: 'Baba Tunde', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=60', text: 'Tubers are large and firm. Excellent starch quality.', time: '1 week ago' }
-    ]
-  },
-  {
-    id: 5,
-    title: 'Sweet Potato Grading after Harvest',
-    crop: 'Sweet Potatoes',
-    category: 'Harvesting',
-    img: potatoesImg,
-    date: '2026-08-18',
-    author: staffList[1],
-    description: 'Tubers dug from Field Block D have been spread in storage shed to dry. Grade A yield is estimated at 75%.',
-    telemetry: {
-      stage: 'Post-Harvest',
-      moisture: '50%',
-      ph: '6.0',
-      temp: '26°C'
-    },
-    comments: [
-      { id: 5001, author: 'Musa Haruna', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60', text: 'No signs of wireworm or rot. Good work.', time: '1 week ago' }
-    ]
-  },
-  {
-    id: 6,
-    title: 'Bell Peppers in shade greenhouse 2',
-    crop: 'Yellow Bell Pepper',
-    category: 'Infrastructure',
-    img: pepperImg,
-    date: '2026-08-21',
-    author: staffList[0],
-    description: 'Shade net settings adjusted. Greenhouse temperature drop of 3.5 degrees logged. Peppers sizing up uniformly.',
-    telemetry: {
-      stage: 'Fruiting',
-      moisture: '75%',
-      ph: '6.3',
-      temp: '25°C'
-    },
-    comments: [
-      { id: 6001, author: 'Ngozi Obi', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60', text: 'Ripening expected in about 12 days.', time: '5 days ago' }
-    ]
-  }
-];
-
 export default function ActivityGallery() {
-  const [logs, setLogs] = useState(initialGalleryLogs);
+  const [logs, setLogs] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCrop, setSelectedCrop] = useState('All');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -267,7 +141,6 @@ export default function ActivityGallery() {
   const fetchLogs = async () => {
     try {
       if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-        setLogs(initialGalleryLogs);
         return;
       }
 
@@ -317,8 +190,7 @@ export default function ActivityGallery() {
 
       setLogs(formattedLogs);
     } catch (err) {
-      console.warn('Supabase tables not configured yet or connection failed, using initial mock data.', err.message);
-      setLogs(initialGalleryLogs);
+      console.error('Error fetching logs from Supabase:', err.message);
     }
   };
 
