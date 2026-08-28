@@ -26,12 +26,12 @@ export default function Settings() {
 
   // States
   const [profile, setProfile] = useState({
-    name: 'Senior Director Baba Tunde',
-    email: 'baba.tunde@resolvefarms.com',
-    phone: '+234 803 123 4567',
-    role: 'Senior Farm Director',
-    location: 'Enugu Field Block A-C',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=60'
+    name: '',
+    email: '',
+    phone: '',
+    role: '',
+    location: '',
+    avatar: ''
   });
 
 

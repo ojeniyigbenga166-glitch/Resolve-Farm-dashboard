@@ -27,12 +27,12 @@ CREATE TABLE IF NOT EXISTS public.gallery_comments (
 -- 3. Create Settings Table (Single-row configuration)
 CREATE TABLE IF NOT EXISTS public.system_settings (
     id INT PRIMARY KEY DEFAULT 1,
-    profile_name TEXT NOT NULL DEFAULT 'Senior Director Baba Tunde',
-    profile_email TEXT NOT NULL DEFAULT 'baba.tunde@resolvefarms.com',
-    profile_phone TEXT DEFAULT '+234 803 123 4567',
-    profile_role TEXT NOT NULL DEFAULT 'Senior Farm Director',
-    profile_location TEXT DEFAULT 'Enugu Field Block A-C',
-    profile_avatar TEXT NOT NULL DEFAULT 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=60',
+    profile_name TEXT NOT NULL DEFAULT '',
+    profile_email TEXT NOT NULL DEFAULT '',
+    profile_phone TEXT DEFAULT '',
+    profile_role TEXT NOT NULL DEFAULT '',
+    profile_location TEXT DEFAULT '',
+    profile_avatar TEXT NOT NULL DEFAULT '',
     low_stock_alert BOOLEAN NOT NULL DEFAULT TRUE,
     order_success_alert BOOLEAN NOT NULL DEFAULT FALSE,
     weekly_report BOOLEAN NOT NULL DEFAULT TRUE,
