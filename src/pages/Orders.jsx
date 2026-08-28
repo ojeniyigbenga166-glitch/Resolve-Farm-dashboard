@@ -14,7 +14,6 @@ import {
   Mail, 
   Phone, 
   MapPin, 
-  CreditCard, 
   Clock,
   AlertTriangle
 } from 'lucide-react';
@@ -37,8 +36,6 @@ export default function Orders() {
   const [newCustomerEmail, setNewCustomerEmail] = useState('');
   const [newCustomerPhone, setNewCustomerPhone] = useState('');
   const [newCustomerAddress, setNewCustomerAddress] = useState('');
-  const [newPaymentMethod, setNewPaymentMethod] = useState('Bank Transfer');
-  const [newPaymentStatus, setNewPaymentStatus] = useState('Paid');
   const [newOrderItems, setNewOrderItems] = useState([]);
   const [newDeliveryFee, setNewDeliveryFee] = useState(2000);
   const [newNotes, setNewNotes] = useState('');
@@ -67,8 +64,6 @@ export default function Orders() {
         status: row.status,
         items: row.items,
         deliveryFee: row.delivery_fee,
-        paymentMethod: row.payment_method,
-        paymentStatus: row.payment_status,
         notes: row.notes,
         timeline: row.timeline
       }));
@@ -209,16 +204,13 @@ export default function Orders() {
       { status: timelineText, time: `${dateStr}, ${timestamp}` }
     ];
 
-    const nextPaymentStatus = nextStatus === 'delivered' ? 'Paid' : currentOrder.paymentStatus;
-
     // Optimistic UI updates
     setOrders(prev => prev.map(order => {
       if (order.id === orderId) {
         const updatedOrder = { 
           ...order, 
           status: nextStatus,
-          timeline: updatedTimeline,
-          paymentStatus: nextPaymentStatus
+          timeline: updatedTimeline
         };
         if (selectedOrder && selectedOrder.id === orderId) {
           setSelectedOrder(updatedOrder);
@@ -235,8 +227,7 @@ export default function Orders() {
           .from('orders')
           .update({
             status: nextStatus,
-            timeline: updatedTimeline,
-            payment_status: nextPaymentStatus
+            timeline: updatedTimeline
           })
           .eq('id', orderId);
         
@@ -333,8 +324,6 @@ export default function Orders() {
       status: 'pending',
       items: newOrderItems,
       delivery_fee: Number(newDeliveryFee),
-      payment_method: newPaymentMethod,
-      payment_status: newPaymentStatus,
       notes: newNotes,
       timeline: [
         { status: 'Order Placed', time: timelineTimeStr }
@@ -350,8 +339,6 @@ export default function Orders() {
       status: 'pending',
       items: newOrderItems,
       deliveryFee: Number(newDeliveryFee),
-      paymentMethod: newPaymentMethod,
-      paymentStatus: newPaymentStatus,
       notes: newNotes,
       timeline: dbOrder.timeline
     };
@@ -363,8 +350,6 @@ export default function Orders() {
     setNewCustomerEmail('');
     setNewCustomerPhone('');
     setNewCustomerAddress('');
-    setNewPaymentMethod('Bank Transfer');
-    setNewPaymentStatus('Paid');
     setNewOrderItems([]);
     setNewDeliveryFee(2000);
     setNewNotes('');
@@ -595,7 +580,7 @@ export default function Orders() {
       {/* Page Header */}
       <div className="page-header" style={{ marginBottom: '1.5rem' }}>
         <h1>Order Processing</h1>
-        <p className="page-subtitle">Track, filter, verify payments, and fulfill customer fresh crop orders.</p>
+        <p className="page-subtitle">Track, filter, and fulfill customer fresh crop orders.</p>
       </div>
 
       {/* KPI Stats Ribbon */}
@@ -993,30 +978,14 @@ export default function Orders() {
                 </div>
               </div>
 
-              {/* Payment Details */}
-              <div className="form-group" style={{ borderBottom: '1px solid #F1F5F9', paddingBottom: '1rem' }}>
-                <label style={{ fontWeight: 700 }}>Payment & Transaction</label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem', fontSize: '0.8rem' }}>
-                  <div>
-                    <span style={{ display: 'block', color: 'var(--color-text-muted)', fontSize: '0.7rem' }}>METHOD</span>
-                    <span style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                      <CreditCard size={14} /> {selectedOrder.paymentMethod}
-                    </span>
-                  </div>
-                  <div>
-                    <span style={{ display: 'block', color: 'var(--color-text-muted)', fontSize: '0.7rem' }}>PAYMENT STATUS</span>
-                    <span style={{ fontWeight: 600, color: selectedOrder.paymentStatus === 'Paid' ? 'var(--color-success)' : selectedOrder.paymentStatus === 'Pending' ? '#FBC02D' : 'var(--color-tomato)' }}>
-                      {selectedOrder.paymentStatus}
-                    </span>
-                  </div>
-                </div>
-                {selectedOrder.notes && (
-                  <div style={{ backgroundColor: '#FFFDF5', borderLeft: '3px solid #FBC02D', padding: '0.5rem 0.75rem', borderRadius: '4px', marginTop: '1rem', fontSize: '0.8rem' }}>
+              {selectedOrder.notes && (
+                <div className="form-group" style={{ borderBottom: '1px solid #F1F5F9', paddingBottom: '1rem' }}>
+                  <div style={{ backgroundColor: '#FFFDF5', borderLeft: '3px solid #FBC02D', padding: '0.5rem 0.75rem', borderRadius: '4px', fontSize: '0.8rem' }}>
                     <span style={{ fontWeight: 600, display: 'block', fontSize: '0.7rem', color: '#B78103', marginBottom: '0.15rem' }}>CUSTOMER NOTE:</span>
                     {selectedOrder.notes}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
               {/* Processing Controls Panel */}
               <div className="form-group">
@@ -1239,36 +1208,6 @@ export default function Orders() {
                   required
                   style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--color-border)', outline: 'none' }}
                 />
-              </div>
-
-              <div>
-                <span style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Payment Method</span>
-                <select 
-                  className="filter-select"
-                  style={{ width: '100%', height: '38px', fontSize: '0.8rem' }}
-                  value={newPaymentMethod}
-                  onChange={(e) => setNewPaymentMethod(e.target.value)}
-                >
-                  <option value="Bank Transfer">Bank Transfer</option>
-                  <option value="Card Payment">Card Payment</option>
-                  <option value="Cash on Delivery">Cash on Delivery</option>
-                </select>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-              <div>
-                <span style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Payment Status</span>
-                <select 
-                  className="filter-select"
-                  style={{ width: '100%', height: '38px', fontSize: '0.8rem' }}
-                  value={newPaymentStatus}
-                  onChange={(e) => setNewPaymentStatus(e.target.value)}
-                >
-                  <option value="Paid">Paid</option>
-                  <option value="Pending">Pending Verification</option>
-                  <option value="Unpaid">Unpaid</option>
-                </select>
               </div>
 
               <div>

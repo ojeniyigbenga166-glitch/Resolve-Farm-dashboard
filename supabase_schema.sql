@@ -171,8 +171,6 @@ CREATE TABLE IF NOT EXISTS public.orders (
     status TEXT NOT NULL DEFAULT 'pending',
     items JSONB NOT NULL,
     delivery_fee INT NOT NULL DEFAULT 2000,
-    payment_method TEXT NOT NULL DEFAULT 'Bank Transfer',
-    payment_status TEXT NOT NULL DEFAULT 'Pending',
     notes TEXT,
     timeline JSONB NOT NULL DEFAULT '[]'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
