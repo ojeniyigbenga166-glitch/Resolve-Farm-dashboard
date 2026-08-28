@@ -593,6 +593,22 @@
   align-items: flex-start;
 }
 
+.activity-item.clickable {
+  cursor: pointer;
+  padding: 0.5rem;
+  margin: -0.5rem;
+  border-radius: var(--radius-sm);
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.activity-item.clickable:hover {
+  background-color: #F8FAFC;
+}
+
+.activity-item.clickable:active {
+  transform: scale(0.98);
+}
+
 .activity-icon-wrapper {
   width: 32px;
   height: 32px;

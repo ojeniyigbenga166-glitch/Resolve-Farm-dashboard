@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import StatCard from '../components/ui/StatCard';
@@ -167,7 +167,8 @@ export default function Dashboard() {
         text: <span>New order <strong>#{o.id}</strong> placed by {o.customer?.name}</span>,
         time: `${o.date}, ${o.time}`,
         icon: <Plus size={14} />,
-        colorClass: 'green'
+        colorClass: 'green',
+        onClick: () => navigate('/orders', { state: { highlightOrderId: o.id } })
       });
     });
 
@@ -178,7 +179,8 @@ export default function Dashboard() {
         text: <span>Low stock warning: <strong>{item.name}</strong> ({item.qty} {item.unit} left)</span>,
         time: 'Needs harvest/restock',
         icon: <AlertCircle size={14} />,
-        colorClass: 'red'
+        colorClass: 'red',
+        onClick: () => navigate('/inventory', { state: { searchQuery: item.name } })
       });
     });
 
@@ -189,14 +191,15 @@ export default function Dashboard() {
         text: <span>New photo log <strong>"{log.title}"</strong> uploaded</span>,
         time: log.author_name ? `by ${log.author_name}` : 'Recent upload',
         icon: <ImageIcon size={14} />,
-        colorClass: 'green'
+        colorClass: 'green',
+        onClick: () => navigate('/activity-gallery', { state: { highlightLogId: log.id } })
       });
     });
 
     return list
       .sort((a, b) => b.timestamp - a.timestamp)
       .slice(0, 5);
-  }, [orders, lowStockItems, galleryLogs, defaultTime]);
+  }, [orders, lowStockItems, galleryLogs, defaultTime, navigate]);
 
   return (
     <div>
@@ -337,7 +340,11 @@ export default function Dashboard() {
           
           <div className="activities-list">
             {recentActivities.map((act) => (
-              <div key={act.id} className="activity-item">
+              <div 
+                key={act.id} 
+                className={`activity-item ${act.onClick ? 'clickable' : ''}`}
+                onClick={act.onClick}
+              >
                 <div className={`activity-icon-wrapper ${act.colorClass}`}>
                   {act.icon}
                 </div>

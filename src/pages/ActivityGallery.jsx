@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { 
   Plus, 
@@ -44,6 +45,7 @@ const staffList = [
 ];
 
 export default function ActivityGallery() {
+  const location = useLocation();
   const [logs, setLogs] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCrop, setSelectedCrop] = useState('All');
@@ -197,6 +199,18 @@ export default function ActivityGallery() {
   useEffect(() => {
     fetchLogs();
   }, []);
+
+  // Auto-open specific media log lightbox if passed from dashboard state
+  useEffect(() => {
+    if (location.state?.highlightLogId && logs.length > 0) {
+      const log = logs.find(l => String(l.id) === String(location.state.highlightLogId));
+      if (log) {
+        setActiveLog(log);
+        // Clear the navigation state from browser history to avoid reopening on refresh
+        window.history.replaceState({}, document.title);
+      }
+    }
+  }, [location.state, logs]);
 
   // Calculate Overview details
   const totalLogs = logs.length;

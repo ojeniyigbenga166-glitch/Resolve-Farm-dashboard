@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Search, 
   X, 
@@ -16,6 +16,7 @@ import StatCard from '../components/ui/StatCard';
 
 export default function Inventory() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [inventory, setInventory] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -48,6 +49,15 @@ export default function Inventory() {
   useEffect(() => {
     fetchInventory();
   }, []);
+
+  // Auto-search for specific crop if passed from dashboard state
+  useEffect(() => {
+    if (location.state?.searchQuery) {
+      setSearchQuery(location.state.searchQuery);
+      // Clear the navigation state from browser history to avoid keeping search on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // Dynamically calculate statuses
   const getItemStatus = (item) => {

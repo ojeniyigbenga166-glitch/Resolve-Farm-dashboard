@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { 
   Search, 
@@ -19,6 +20,7 @@ import {
 } from 'lucide-react';
 
 export default function Orders() {
+  const location = useLocation();
   const [orders, setOrders] = useState([]);
   const [catalogProducts, setCatalogProducts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -43,6 +45,12 @@ export default function Orders() {
   // Dynamic manual item selection fields
   const [selectedProductToAdd, setSelectedProductToAdd] = useState('');
   const [productQuantityToAdd, setProductQuantityToAdd] = useState(1);
+
+  // Handle opening of details drawer
+  const handleOpenDetail = (order) => {
+    setSelectedOrder(order);
+    setIsDetailDrawerOpen(true);
+  };
 
   const fetchOrders = async () => {
     try {
@@ -99,6 +107,18 @@ export default function Orders() {
     fetchOrders();
     fetchCatalogProducts();
   }, []);
+
+  // Auto-open specific order if passed from dashboard state
+  useEffect(() => {
+    if (location.state?.highlightOrderId && orders.length > 0) {
+      const order = orders.find(o => o.id === location.state.highlightOrderId);
+      if (order) {
+        handleOpenDetail(order);
+        // Clear the navigation state from browser history to avoid reopening on refresh
+        window.history.replaceState({}, document.title);
+      }
+    }
+  }, [location.state, orders]);
   // Calculate order items totals
   const getOrderTotal = (order) => {
     const itemsTotal = (order.items || []).reduce((sum, item) => sum + (item.price * item.qty), 0);
@@ -128,29 +148,29 @@ export default function Orders() {
     return { revenue, pendingCount, deliveredCount, totalCount };
   }, [orders]);
 
-  // Date range filter helper
-  const isInDateRange = (orderDateStr) => {
-    if (selectedDateRange === 'All Time') return true;
-    
-    // We assume current relative date in our system is May 30, 2024 to align with seed data.
-    const orderDate = new Date(orderDateStr);
-    const currentDate = new Date('2024-05-30'); // System base date
-
-    if (selectedDateRange === 'Today') {
-      return orderDateStr === '2024-05-30';
-    } else if (selectedDateRange === 'This Week') {
-      const diffTime = Math.abs(currentDate - orderDate);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return diffDays <= 7;
-    } else if (selectedDateRange === 'This Month') {
-      return orderDate.getMonth() === currentDate.getMonth() && 
-             orderDate.getFullYear() === currentDate.getFullYear();
-    }
-    return true;
-  };
-
   // Filter & Sort Logic
   const filteredOrders = useMemo(() => {
+    // Date range filter helper
+    const isInDateRange = (orderDateStr) => {
+      if (selectedDateRange === 'All Time') return true;
+      
+      // We assume current relative date in our system is May 30, 2024 to align with seed data.
+      const orderDate = new Date(orderDateStr);
+      const currentDate = new Date('2024-05-30'); // System base date
+
+      if (selectedDateRange === 'Today') {
+        return orderDateStr === '2024-05-30';
+      } else if (selectedDateRange === 'This Week') {
+        const diffTime = Math.abs(currentDate - orderDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays <= 7;
+      } else if (selectedDateRange === 'This Month') {
+        return orderDate.getMonth() === currentDate.getMonth() && 
+               orderDate.getFullYear() === currentDate.getFullYear();
+      }
+      return true;
+    };
+
     return orders
       .filter(order => {
         const matchesSearch = 
@@ -177,12 +197,6 @@ export default function Orders() {
         return 0;
       });
   }, [orders, searchQuery, selectedStatus, selectedDateRange, sortBy]);
-
-  // Handle opening of details drawer
-  const handleOpenDetail = (order) => {
-    setSelectedOrder(order);
-    setIsDetailDrawerOpen(true);
-  };
 
   // Handle status updates inside details drawer
   const handleUpdateOrderStatus = async (orderId, nextStatus) => {
