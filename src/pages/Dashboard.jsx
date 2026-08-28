@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../supabaseClient';
 import StatCard from '../components/ui/StatCard';
 import { 
   DollarSign, 
@@ -23,11 +25,6 @@ import {
   Pie, 
   Cell 
 } from 'recharts';
-
-import habaneroImg from '../assets/habanero_pepper.png';
-import cornImg from '../assets/african_corn.png';
-import tomatoesImg from '../assets/roma_tomatoes.png';
-import pepperImg from '../assets/yellow_bell_pepper.png';
 
 export default function Dashboard() {
   // Sales Line Chart Data
@@ -99,13 +96,31 @@ export default function Dashboard() {
     }
   ];
 
-  // Low Stock Items Data
-  const lowStockItems = [
-    { name: 'Habanero Pepper', category: 'Peppers', qty: 5, img: habaneroImg },
-    { name: 'African Corn', category: 'Corn', qty: 7, img: cornImg },
-    { name: 'Roma Tomatoes', category: 'Tomatoes', qty: 12, img: tomatoesImg },
-    { name: 'Yellow Bell Pepper', category: 'Peppers', qty: 15, img: pepperImg }
-  ];
+  const navigate = useNavigate();
+  const [products, setProducts] = useState([]);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+          return;
+        }
+        const { data, error } = await supabase
+          .from('products')
+          .select('*');
+        if (error) throw error;
+        setProducts(data || []);
+      } catch (err) {
+        console.error('Error fetching dashboard products:', err.message);
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  // Filter low stock items: quantity is less than or equal to warning minimum limit
+  const lowStockItems = products.filter(item => item.qty <= item.min);
+  const lowStockCount = lowStockItems.length;
+  const activeProductsCount = products.filter(item => item.status === 'published').length;
 
   // Recent Activities Data
   const recentActivities = [
@@ -170,17 +185,17 @@ export default function Dashboard() {
         />
         <StatCard 
           label="Low Stock Items" 
-          value="8" 
+          value={lowStockCount} 
           icon={<Package size={20} />} 
           iconBgType="red-bg"
-          footer={{ prefix: 'Needs Attention ', linkText: 'View Items', linkClass: 'red-link' }}
+          footer={{ prefix: 'Needs Attention ', linkText: 'View Items', linkClass: 'red-link', onClick: () => navigate('/inventory') }}
         />
         <StatCard 
           label="Active Products" 
-          value="56" 
+          value={activeProductsCount} 
           icon={<Sprout size={20} />} 
           iconBgType="green-bg"
-          footer={{ prefix: 'Published ', linkText: 'View All', linkClass: 'green-link' }}
+          footer={{ prefix: 'Published ', linkText: 'View All', linkClass: 'green-link', onClick: () => navigate('/products') }}
         />
       </div>
 
@@ -351,24 +366,36 @@ export default function Dashboard() {
         <div className="dashboard-card">
           <div className="card-header-container">
             <h2 className="card-title">Low Stock Alerts</h2>
-            <span className="card-header-link">View All</span>
+            <span className="card-header-link" onClick={() => navigate('/inventory')} style={{ cursor: 'pointer' }}>View All</span>
           </div>
           
           <div className="low-stock-list">
-            {lowStockItems.map((item, idx) => (
-              <div key={idx} className="low-stock-item">
-                <div className="low-stock-product-info">
-                  <img src={item.img} alt={item.name} className="low-stock-product-img" />
-                  <div className="low-stock-product-meta">
-                    <span className="low-stock-product-name">{item.name}</span>
-                    <span className="low-stock-product-category">{item.category}</span>
+            {lowStockItems.length > 0 ? (
+              lowStockItems.slice(0, 4).map((item, idx) => (
+                <div key={idx} className="low-stock-item">
+                  <div className="low-stock-product-info">
+                    <div className="low-stock-product-img-wrapper" style={{ width: '40px', height: '40px', borderRadius: '6px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-border)' }}>
+                      {item.img ? (
+                        <img src={item.img} alt={item.name} className="low-stock-product-img" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <span style={{ fontSize: '1rem' }}>📦</span>
+                      )}
+                    </div>
+                    <div className="low-stock-product-meta" style={{ marginLeft: '0.75rem' }}>
+                      <span className="low-stock-product-name">{item.name}</span>
+                      <span className="low-stock-product-category">{item.category}</span>
+                    </div>
+                  </div>
+                  <div className="low-stock-qty-badge">
+                    {item.qty} {item.unit || 'kg'} in stock
                   </div>
                 </div>
-                <div className="low-stock-qty-badge">
-                  {item.qty} in stock
-                </div>
+              ))
+            ) : (
+              <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
+                🎉 All stock levels are healthy!
               </div>
-            ))}
+            )}
           </div>
         </div>
 
@@ -381,7 +408,7 @@ export default function Dashboard() {
           <div className="quick-actions-grid">
             <button 
               className="quick-action-btn"
-              onClick={() => handleQuickAction('Add New Product')}
+              onClick={() => navigate('/products')}
             >
               <div className="quick-action-icon-circle">
                 <Plus size={18} />
@@ -390,7 +417,7 @@ export default function Dashboard() {
             </button>
             <button 
               className="quick-action-btn"
-              onClick={() => handleQuickAction('View Orders')}
+              onClick={() => navigate('/orders')}
             >
               <div className="quick-action-icon-circle">
                 <ShoppingCart size={18} />
@@ -399,7 +426,7 @@ export default function Dashboard() {
             </button>
             <button 
               className="quick-action-btn"
-              onClick={() => handleQuickAction('Add Activity')}
+              onClick={() => navigate('/farm-activities')}
             >
               <div className="quick-action-icon-circle">
                 <Sprout size={18} />
@@ -408,7 +435,7 @@ export default function Dashboard() {
             </button>
             <button 
               className="quick-action-btn"
-              onClick={() => handleQuickAction('Upload Photos')}
+              onClick={() => navigate('/activity-gallery')}
             >
               <div className="quick-action-icon-circle">
                 <ImageIcon size={18} />

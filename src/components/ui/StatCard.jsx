@@ -23,7 +23,11 @@ export default function StatCard({ label, value, icon, iconBgType = 'green-bg', 
             )}
             {footer.suffix && <span style={{ color: 'var(--color-text-muted)' }}>{footer.suffix}</span>}
             {footer.linkText && (
-              <span className={`stat-card-link ${footer.linkClass || ''}`}>
+              <span 
+                className={`stat-card-link ${footer.linkClass || ''}`}
+                onClick={footer.onClick}
+                style={footer.onClick ? { cursor: 'pointer' } : {}}
+              >
                 {footer.linkText}
               </span>
             )}
