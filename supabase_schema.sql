@@ -161,3 +161,36 @@ ON CONFLICT (id) DO UPDATE SET
 SELECT setval(pg_get_serial_sequence('public.products', 'id'), coalesce(max(id), 1) + 1) FROM public.products;
 SELECT setval(pg_get_serial_sequence('public.gallery_logs', 'id'), coalesce(max(id), 1) + 1) FROM public.gallery_logs;
 SELECT setval(pg_get_serial_sequence('public.gallery_comments', 'id'), coalesce(max(id), 1) + 1) FROM public.gallery_comments;
+
+-- 9. Create Orders Table
+CREATE TABLE IF NOT EXISTS public.orders (
+    id TEXT PRIMARY KEY,
+    customer JSONB NOT NULL,
+    date DATE NOT NULL DEFAULT CURRENT_DATE,
+    time TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    items JSONB NOT NULL,
+    delivery_fee INT NOT NULL DEFAULT 2000,
+    payment_method TEXT NOT NULL DEFAULT 'Bank Transfer',
+    payment_status TEXT NOT NULL DEFAULT 'Pending',
+    notes TEXT,
+    timeline JSONB NOT NULL DEFAULT '[]'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Enable Row Level Security (RLS) for Orders
+ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
+
+-- Set up RLS Policies for Orders
+DROP POLICY IF EXISTS "Allow anonymous read access" ON public.orders;
+CREATE POLICY "Allow anonymous read access" ON public.orders FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow anonymous write access" ON public.orders;
+CREATE POLICY "Allow anonymous write access" ON public.orders FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow anonymous update access" ON public.orders;
+CREATE POLICY "Allow anonymous update access" ON public.orders FOR UPDATE USING (true);
+
+DROP POLICY IF EXISTS "Allow anonymous delete access" ON public.orders;
+CREATE POLICY "Allow anonymous delete access" ON public.orders FOR DELETE USING (true);
+

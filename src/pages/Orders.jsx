@@ -1,210 +1,27 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
 import { 
   Search, 
-  Filter, 
-  Calendar, 
-  TrendingUp, 
   Plus, 
   X, 
   Eye, 
-  Truck, 
   Check, 
-  AlertCircle, 
   Trash2, 
   Printer, 
   ShoppingBag, 
   DollarSign, 
   CheckCircle2, 
-  XCircle, 
-  Package, 
-  User, 
   Mail, 
   Phone, 
   MapPin, 
   CreditCard, 
-  ArrowRight, 
   Clock,
-  ChevronRight,
   AlertTriangle
 } from 'lucide-react';
-import StatCard from '../components/ui/StatCard';
-
-// Crop image assets imports
-import habaneroImg from '../assets/habanero_pepper.png';
-import cornImg from '../assets/african_corn.png';
-import tomatoesImg from '../assets/roma_tomatoes.png';
-import pepperImg from '../assets/yellow_bell_pepper.png';
-import cassavaImg from '../assets/cassava_tubers.png';
-import potatoesImg from '../assets/sweet_potatoes.png';
-import carrotsImg from '../assets/organic_carrots.png';
-import beansImg from '../assets/green_beans.png';
-
-// Mock catalog products for manually creating an order
-const catalogProducts = [
-  { id: 1, name: 'Habanero Pepper', price: 1800, unit: 'kg', img: habaneroImg, category: 'Peppers' },
-  { id: 2, name: 'African Corn', price: 2200, unit: 'bag', img: cornImg, category: 'Corn' },
-  { id: 3, name: 'Roma Tomatoes', price: 1500, unit: 'kg', img: tomatoesImg, category: 'Tomatoes' },
-  { id: 4, name: 'Yellow Bell Pepper', price: 2000, unit: 'kg', img: pepperImg, category: 'Peppers' },
-  { id: 5, name: 'Cassava Tubers', price: 900, unit: 'bag', img: cassavaImg, category: 'Tubers' },
-  { id: 6, name: 'Sweet Potatoes', price: 1100, unit: 'kg', img: potatoesImg, category: 'Tubers' },
-  { id: 7, name: 'Organic Carrots', price: 1200, unit: 'kg', img: carrotsImg, category: 'Vegetables' },
-  { id: 8, name: 'Green Beans', price: 1600, unit: 'kg', img: beansImg, category: 'Vegetables' }
-];
-
-// Seeded Initial Mock Orders
-const initialOrders = [
-  { 
-    id: 'RF-2024-0134', 
-    customer: { 
-      name: 'John Smith', 
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=60', 
-      phone: '+234 803 123 4567', 
-      email: 'john.smith@gmail.com', 
-      address: 'Plot 12, Phase II, Lekki, Lagos' 
-    },
-    date: '2024-05-30', 
-    time: '10:24 AM', 
-    status: 'pending', 
-    items: [
-      { id: 1, name: 'Habanero Pepper', qty: 5, price: 1800, unit: 'kg', img: habaneroImg },
-      { id: 3, name: 'Roma Tomatoes', qty: 10, price: 1500, unit: 'kg', img: tomatoesImg }
-    ],
-    deliveryFee: 2500,
-    paymentMethod: 'Bank Transfer',
-    paymentStatus: 'Paid',
-    notes: 'Please deliver in the morning.',
-    timeline: [
-      { status: 'Order Placed', time: 'May 30, 2024, 10:24 AM' }
-    ]
-  },
-  { 
-    id: 'RF-2024-0133', 
-    customer: { 
-      name: 'Mary Johnson', 
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=60', 
-      phone: '+234 812 345 6789', 
-      email: 'mary.j@yahoo.com', 
-      address: '45 Allen Avenue, Ikeja, Lagos' 
-    },
-    date: '2024-05-30', 
-    time: '09:15 AM', 
-    status: 'processing', 
-    items: [
-      { id: 2, name: 'African Corn', qty: 2, price: 2200, unit: 'bag', img: cornImg }
-    ],
-    deliveryFee: 3000,
-    paymentMethod: 'Card Payment',
-    paymentStatus: 'Paid',
-    notes: 'Call before arriving.',
-    timeline: [
-      { status: 'Order Placed', time: 'May 30, 2024, 09:15 AM' },
-      { status: 'Processing Started', time: 'May 30, 2024, 11:00 AM' }
-    ]
-  },
-  { 
-    id: 'RF-2024-0132', 
-    customer: { 
-      name: 'David Brown', 
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=60', 
-      phone: '+234 705 987 6543', 
-      email: 'dbrown@outlook.com', 
-      address: 'Block C4, Ikoyi Gardens, Ikoyi, Lagos' 
-    },
-    date: '2024-05-29', 
-    time: '04:30 PM', 
-    status: 'delivered', 
-    items: [
-      { id: 3, name: 'Roma Tomatoes', qty: 15, price: 1500, unit: 'kg', img: tomatoesImg },
-      { id: 5, name: 'Cassava Tubers', qty: 5, price: 900, unit: 'bag', img: cassavaImg }
-    ],
-    deliveryFee: 4000,
-    paymentMethod: 'Bank Transfer',
-    paymentStatus: 'Paid',
-    notes: 'Gate code is #1982',
-    timeline: [
-      { status: 'Order Placed', time: 'May 29, 2024, 04:30 PM' },
-      { status: 'Processing Started', time: 'May 30, 2024, 08:30 AM' },
-      { status: 'Delivered', time: 'May 30, 2024, 02:45 PM' }
-    ]
-  },
-  { 
-    id: 'RF-2024-0131', 
-    customer: { 
-      name: 'Sarah Williams', 
-      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&auto=format&fit=crop&q=60', 
-      phone: '+234 909 555 4433', 
-      email: 'sarah.w@gmail.com', 
-      address: '12 Amodu Ojikutu Street, VI, Lagos' 
-    },
-    date: '2024-05-29', 
-    time: '01:10 PM', 
-    status: 'delivered', 
-    items: [
-      { id: 4, name: 'Yellow Bell Pepper', qty: 10, price: 2000, unit: 'kg', img: pepperImg }
-    ],
-    deliveryFee: 1500,
-    paymentMethod: 'Card Payment',
-    paymentStatus: 'Paid',
-    notes: '',
-    timeline: [
-      { status: 'Order Placed', time: 'May 29, 2024, 01:10 PM' },
-      { status: 'Processing Started', time: 'May 29, 2024, 03:00 PM' },
-      { status: 'Delivered', time: 'May 30, 2024, 11:30 AM' }
-    ]
-  },
-  { 
-    id: 'RF-2024-0130', 
-    customer: { 
-      name: 'Michael Davis', 
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60', 
-      phone: '+234 802 888 9900', 
-      email: 'mdavis@gmail.com', 
-      address: '77 Adeniran Ogunsanya, Surulere, Lagos' 
-    },
-    date: '2024-05-28', 
-    time: '11:45 AM', 
-    status: 'cancelled', 
-    items: [
-      { id: 1, name: 'Habanero Pepper', qty: 5, price: 1800, unit: 'kg', img: habaneroImg },
-      { id: 6, name: 'Sweet Potatoes', qty: 10, price: 1100, unit: 'kg', img: potatoesImg }
-    ],
-    deliveryFee: 2000,
-    paymentMethod: 'Cash on Delivery',
-    paymentStatus: 'Unpaid',
-    notes: 'Cancelled before shipping.',
-    timeline: [
-      { status: 'Order Placed', time: 'May 28, 2024, 11:45 AM' },
-      { status: 'Cancelled', time: 'May 28, 2024, 02:15 PM' }
-    ]
-  },
-  { 
-    id: 'RF-2024-0129', 
-    customer: { 
-      name: 'Elizabeth Okon', 
-      avatar: '', 
-      phone: '+234 818 111 2222', 
-      email: 'e.okon@gmail.com', 
-      address: '18 Gbagada Expressway, Gbagada, Lagos' 
-    },
-    date: '2024-05-27', 
-    time: '03:20 PM', 
-    status: 'pending', 
-    items: [
-      { id: 2, name: 'African Corn', qty: 5, price: 2200, unit: 'bag', img: cornImg },
-      { id: 4, name: 'Yellow Bell Pepper', qty: 8, price: 2000, unit: 'kg', img: pepperImg }
-    ],
-    deliveryFee: 3500,
-    paymentMethod: 'Bank Transfer',
-    paymentStatus: 'Pending',
-    notes: 'Checking payment receipt verification.',
-    timeline: [
-      { status: 'Order Placed', time: 'May 27, 2024, 03:20 PM' }
-    ]
-  }
-];
 
 export default function Orders() {
-  const [orders, setOrders] = useState(initialOrders);
+  const [orders, setOrders] = useState([]);
+  const [catalogProducts, setCatalogProducts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [selectedDateRange, setSelectedDateRange] = useState('All Time'); // 'All Time', 'Today', 'This Week', 'This Month'
@@ -227,12 +44,69 @@ export default function Orders() {
   const [newNotes, setNewNotes] = useState('');
   
   // Dynamic manual item selection fields
-  const [selectedProductToAdd, setSelectedProductToAdd] = useState(1);
+  const [selectedProductToAdd, setSelectedProductToAdd] = useState('');
   const [productQuantityToAdd, setProductQuantityToAdd] = useState(1);
 
+  const fetchOrders = async () => {
+    try {
+      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*');
+
+      if (error) throw error;
+
+      const formatted = (data || []).map(row => ({
+        id: row.id,
+        customer: row.customer,
+        date: row.date,
+        time: row.time,
+        status: row.status,
+        items: row.items,
+        deliveryFee: row.delivery_fee,
+        paymentMethod: row.payment_method,
+        paymentStatus: row.payment_status,
+        notes: row.notes,
+        timeline: row.timeline
+      }));
+
+      setOrders(formatted);
+    } catch (err) {
+      console.error('Error fetching orders from Supabase:', err.message);
+    }
+  };
+
+  const fetchCatalogProducts = async () => {
+    try {
+      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('products')
+        .select('*');
+
+      if (error) throw error;
+      setCatalogProducts(data || []);
+
+      if (data && data.length > 0) {
+        setSelectedProductToAdd(data[0].id);
+      }
+    } catch (err) {
+      console.error('Error fetching catalog products for manual orders:', err.message);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+    fetchCatalogProducts();
+  }, []);
   // Calculate order items totals
   const getOrderTotal = (order) => {
-    const itemsTotal = order.items.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    const itemsTotal = (order.items || []).reduce((sum, item) => sum + (item.price * item.qty), 0);
     return itemsTotal + order.deliveryFee;
   };
 
@@ -316,60 +190,96 @@ export default function Orders() {
   };
 
   // Handle status updates inside details drawer
-  const handleUpdateOrderStatus = (orderId, nextStatus) => {
+  const handleUpdateOrderStatus = async (orderId, nextStatus) => {
+    // Generate timestamps
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const dateStr = new Date().toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+    
+    let timelineText = '';
+    if (nextStatus === 'processing') timelineText = 'Processing Started';
+    else if (nextStatus === 'delivered') timelineText = 'Delivered';
+    else if (nextStatus === 'cancelled') timelineText = 'Cancelled';
+    else timelineText = 'Order Re-opened';
+
+    const currentOrder = orders.find(o => o.id === orderId);
+    if (!currentOrder) return;
+
+    const updatedTimeline = [
+      ...(currentOrder.timeline || []),
+      { status: timelineText, time: `${dateStr}, ${timestamp}` }
+    ];
+
+    const nextPaymentStatus = nextStatus === 'delivered' ? 'Paid' : currentOrder.paymentStatus;
+
+    // Optimistic UI updates
     setOrders(prev => prev.map(order => {
       if (order.id === orderId) {
-        const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const dateStr = new Date().toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
-        
-        let timelineText = '';
-        if (nextStatus === 'processing') timelineText = 'Processing Started';
-        else if (nextStatus === 'delivered') timelineText = 'Delivered';
-        else if (nextStatus === 'cancelled') timelineText = 'Cancelled';
-        else timelineText = 'Order Re-opened';
-
-        const updatedTimeline = [
-          ...order.timeline,
-          { status: timelineText, time: `${dateStr}, ${timestamp}` }
-        ];
-
         const updatedOrder = { 
           ...order, 
           status: nextStatus,
           timeline: updatedTimeline,
-          paymentStatus: nextStatus === 'delivered' ? 'Paid' : order.paymentStatus
+          paymentStatus: nextPaymentStatus
         };
-
-        // Sync visual detailed drawer too
         if (selectedOrder && selectedOrder.id === orderId) {
           setSelectedOrder(updatedOrder);
         }
-
         return updatedOrder;
       }
       return order;
     }));
+
+    // Sync to Supabase
+    try {
+      if (import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        const { error } = await supabase
+          .from('orders')
+          .update({
+            status: nextStatus,
+            timeline: updatedTimeline,
+            payment_status: nextPaymentStatus
+          })
+          .eq('id', orderId);
+        
+        if (error) throw error;
+        fetchOrders();
+      }
+    } catch (err) {
+      console.error('Error updating order status in Supabase:', err);
+    }
   };
 
   // Quick Action to delete/cancel order
-  const handleDeleteOrder = (orderId) => {
+  const handleDeleteOrder = async (orderId) => {
     if (window.confirm(`Are you sure you want to delete order ${orderId} permanently?`)) {
       setOrders(prev => prev.filter(o => o.id !== orderId));
       setIsDetailDrawerOpen(false);
       setSelectedOrder(null);
+
+      try {
+        if (import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY) {
+          const { error } = await supabase
+            .from('orders')
+            .delete()
+            .eq('id', orderId);
+          if (error) throw error;
+          fetchOrders();
+        }
+      } catch (err) {
+        console.error('Error deleting order in Supabase:', err);
+      }
     }
   };
 
   // Add Item to manual order constructor
   const handleAddManualItem = () => {
-    const product = catalogProducts.find(p => p.id === Number(selectedProductToAdd));
+    const product = catalogProducts.find(p => String(p.id) === String(selectedProductToAdd));
     if (!product) return;
 
     // Check if product already added
-    const existing = newOrderItems.find(item => item.id === product.id);
+    const existing = newOrderItems.find(item => String(item.id) === String(product.id));
     if (existing) {
       setNewOrderItems(prev => prev.map(item => 
-        item.id === product.id ? { ...item, qty: item.qty + Number(productQuantityToAdd) } : item
+        String(item.id) === String(product.id) ? { ...item, qty: item.qty + Number(productQuantityToAdd) } : item
       ));
     } else {
       setNewOrderItems(prev => [...prev, {
@@ -377,7 +287,7 @@ export default function Orders() {
         name: product.name,
         price: product.price,
         unit: product.unit,
-        img: product.img,
+        img: product.img || '',
         qty: Number(productQuantityToAdd)
       }]);
     }
@@ -387,11 +297,11 @@ export default function Orders() {
 
   // Remove Item from manual order constructor
   const handleRemoveManualItem = (productId) => {
-    setNewOrderItems(prev => prev.filter(item => item.id !== productId));
+    setNewOrderItems(prev => prev.filter(item => String(item.id) !== String(productId)));
   };
 
   // Create manual order submit handler
-  const handleCreateOrderSubmit = (e) => {
+  const handleCreateOrderSubmit = async (e) => {
     e.preventDefault();
 
     if (!newCustomerName.trim()) {
@@ -409,7 +319,7 @@ export default function Orders() {
     const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const timelineTimeStr = now.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) + `, ${timeStr}`;
 
-    const newOrder = {
+    const dbOrder = {
       id: orderId,
       customer: {
         name: newCustomerName.trim(),
@@ -422,16 +332,31 @@ export default function Orders() {
       time: timeStr,
       status: 'pending',
       items: newOrderItems,
-      deliveryFee: Number(newDeliveryFee),
-      paymentMethod: newPaymentMethod,
-      paymentStatus: newPaymentStatus,
+      delivery_fee: Number(newDeliveryFee),
+      payment_method: newPaymentMethod,
+      payment_status: newPaymentStatus,
       notes: newNotes,
       timeline: [
         { status: 'Order Placed', time: timelineTimeStr }
       ]
     };
 
-    setOrders(prev => [newOrder, ...prev]);
+    // Optimistic local state update
+    const localOrder = {
+      id: orderId,
+      customer: dbOrder.customer,
+      date: dateStr,
+      time: timeStr,
+      status: 'pending',
+      items: newOrderItems,
+      deliveryFee: Number(newDeliveryFee),
+      paymentMethod: newPaymentMethod,
+      paymentStatus: newPaymentStatus,
+      notes: newNotes,
+      timeline: dbOrder.timeline
+    };
+
+    setOrders(prev => [localOrder, ...prev]);
 
     // Reset drawer state
     setNewCustomerName('');
@@ -445,7 +370,19 @@ export default function Orders() {
     setNewNotes('');
     setIsCreateDrawerOpen(false);
 
-    alert(`Order ${orderId} successfully created!`);
+    try {
+      if (import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        const { error } = await supabase
+          .from('orders')
+          .insert([dbOrder]);
+        
+        if (error) throw error;
+        fetchOrders();
+        alert(`Order ${orderId} successfully created!`);
+      }
+    } catch (err) {
+      console.error('Error creating order in Supabase:', err);
+    }
   };
 
   // Print simulation trigger

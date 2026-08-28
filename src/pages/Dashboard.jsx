@@ -161,10 +161,6 @@ export default function Dashboard() {
     }
   ];
 
-  const handleQuickAction = (actionName) => {
-    alert(`Quick Action: "${actionName}" triggered! (Demo placeholder)`);
-  };
-
   return (
     <div>
       {/* KPI Cards Grid */}
