@@ -119,11 +119,7 @@ export default function Products() {
 
       if (error) throw error;
 
-      if (data && data.length > 0) {
-        setProducts(data);
-      } else {
-        setProducts(initialProducts);
-      }
+      setProducts(data || []);
     } catch (err) {
       console.warn('Supabase products table not configured or connection failed, using initial mock data.', err.message);
       setProducts(initialProducts);

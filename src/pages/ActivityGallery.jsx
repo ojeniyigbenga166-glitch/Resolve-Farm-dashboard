@@ -315,11 +315,7 @@ export default function ActivityGallery() {
         };
       });
 
-      if (formattedLogs.length === 0) {
-        setLogs(initialGalleryLogs);
-      } else {
-        setLogs(formattedLogs);
-      }
+      setLogs(formattedLogs);
     } catch (err) {
       console.warn('Supabase tables not configured yet or connection failed, using initial mock data.', err.message);
       setLogs(initialGalleryLogs);

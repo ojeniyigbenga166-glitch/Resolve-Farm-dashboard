@@ -103,4 +103,58 @@ CREATE POLICY "Allow anonymous update access" ON public.products FOR UPDATE USIN
 
 DROP POLICY IF EXISTS "Allow anonymous delete access" ON public.products;
 CREATE POLICY "Allow anonymous delete access" ON public.products FOR DELETE USING (true);
+-- 5. Seed Initial Products Data
+INSERT INTO public.products (id, name, category, price, unit, status, img) VALUES
+(1, 'Habanero Pepper', 'Peppers', 1800, 'kg', 'published', '/src/assets/habanero_pepper.png'),
+(2, 'African Corn', 'Corn', 2200, 'bag', 'published', '/src/assets/african_corn.png'),
+(3, 'Roma Tomatoes', 'Tomatoes', 1500, 'kg', 'published', '/src/assets/roma_tomatoes.png'),
+(4, 'Yellow Bell Pepper', 'Peppers', 2000, 'kg', 'draft', '/src/assets/yellow_bell_pepper.png'),
+(5, 'Cassava Tubers', 'Tubers', 900, 'bag', 'published', '/src/assets/cassava_tubers.png'),
+(6, 'Sweet Potatoes', 'Tubers', 1100, 'kg', 'draft', '/src/assets/sweet_potatoes.png')
+ON CONFLICT (id) DO UPDATE SET 
+    name = EXCLUDED.name,
+    category = EXCLUDED.category,
+    price = EXCLUDED.price,
+    unit = EXCLUDED.unit,
+    status = EXCLUDED.status,
+    img = EXCLUDED.img;
 
+-- 6. Seed Initial Gallery Logs Data
+INSERT INTO public.gallery_logs (id, title, crop, category, img, date, author_name, author_avatar, description, telemetry) VALUES
+(1, 'Tomato Flowering Stage in Block A', 'Roma Tomatoes', 'Growth Progress', '/src/assets/roma_tomatoes.png', '2026-08-25', 'Ngozi Obi', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60', 'First flowering nodes observed in row 3 to 10 of Field Block A. Soil moisture levels are hovering around 70%. Pollinator activity is excellent. No pests observed.', '{"stage": "Flowering", "moisture": "70%", "ph": "6.4", "temp": "28°C"}'),
+(2, 'Habanero Peppers Color Turn', 'Habanero Pepper', 'Growth Progress', '/src/assets/habanero_pepper.png', '2026-08-24', 'Baba Tunde', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=60', 'Peppers are starting to ripen and change color from dark green to bright orange/red. Harvesting scheduled to begin next Monday.', '{"stage": "Ripening", "moisture": "65%", "ph": "6.2", "temp": "30°C"}'),
+(3, 'Maize Height Performance Block C', 'African Corn', 'Growth Progress', '/src/assets/african_corn.png', '2026-08-22', 'Musa Haruna', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60', 'Corn stands have reached average heights of 1.8m. Stalk width is excellent. Color is deep forest green, indicating adequate nitrogen availability.', '{"stage": "Vegetative (V8)", "moisture": "68%", "ph": "6.5", "temp": "29°C"}'),
+(4, 'Cassava Harvest Selection Block B', 'Cassava Tubers', 'Harvesting', '/src/assets/cassava_tubers.png', '2026-08-19', 'Chioma Ade', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=60', 'First block harvest. Tuber sizing checked. Average weight per plant stands at 4.2kg, exceeding our 3.8kg baseline.', '{"stage": "Harvest Ready", "moisture": "58%", "ph": "5.9", "temp": "27°C"}'),
+(5, 'Sweet Potato Grading after Harvest', 'Sweet Potatoes', 'Harvesting', '/src/assets/sweet_potatoes.png', '2026-08-18', 'Baba Tunde', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=60', 'Tubers dug from Field Block D have been spread in storage shed to dry. Grade A yield is estimated at 75%.', '{"stage": "Post-Harvest", "moisture": "50%", "ph": "6.0", "temp": "26°C"}'),
+(6, 'Bell Peppers in shade greenhouse 2', 'Yellow Bell Pepper', 'Infrastructure', '/src/assets/yellow_bell_pepper.png', '2026-08-21', 'Ngozi Obi', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60', 'Shade net settings adjusted. Greenhouse temperature drop of 3.5 degrees logged. Peppers sizing up uniformly.', '{"stage": "Fruiting", "moisture": "75%", "ph": "6.3", "temp": "25°C"}')
+ON CONFLICT (id) DO UPDATE SET 
+    title = EXCLUDED.title,
+    crop = EXCLUDED.crop,
+    category = EXCLUDED.category,
+    img = EXCLUDED.img,
+    date = EXCLUDED.date,
+    author_name = EXCLUDED.author_name,
+    author_avatar = EXCLUDED.author_avatar,
+    description = EXCLUDED.description,
+    telemetry = EXCLUDED.telemetry;
+
+-- 7. Seed Initial Gallery Comments Data
+INSERT INTO public.gallery_comments (id, log_id, author, avatar, text, time) VALUES
+(1, 1, 'Baba Tunde', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=60', 'Flower density looks much better than last season.', '2 days ago'),
+(2, 1, 'Chioma Ade', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=60', 'Keep moisture high this week to prevent early bud drop.', '1 day ago'),
+(3, 2, 'Ngozi Obi', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60', 'Ready to pick on Monday. I will prepare the crates.', '2 days ago'),
+(4, 3, 'Chioma Ade', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=60', 'Fertigation cycle in Block C is showing great results.', '3 days ago'),
+(5, 4, 'Baba Tunde', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=60', 'Tubers are large and firm. Excellent starch quality.', '1 week ago'),
+(6, 5, 'Musa Haruna', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60', 'No signs of wireworm or rot. Good work.', '1 week ago'),
+(7, 6, 'Ngozi Obi', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60', 'Ripening expected in about 12 days.', '5 days ago')
+ON CONFLICT (id) DO UPDATE SET 
+    log_id = EXCLUDED.log_id,
+    author = EXCLUDED.author,
+    avatar = EXCLUDED.avatar,
+    text = EXCLUDED.text,
+    time = EXCLUDED.time;
+
+-- 8. Reset Auto-Increment Sequences
+SELECT setval(pg_get_serial_sequence('public.products', 'id'), coalesce(max(id), 1) + 1) FROM public.products;
+SELECT setval(pg_get_serial_sequence('public.gallery_logs', 'id'), coalesce(max(id), 1) + 1) FROM public.gallery_logs;
+SELECT setval(pg_get_serial_sequence('public.gallery_comments', 'id'), coalesce(max(id), 1) + 1) FROM public.gallery_comments;
