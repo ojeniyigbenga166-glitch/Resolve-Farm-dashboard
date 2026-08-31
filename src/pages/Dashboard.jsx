@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import StatCard from '../components/ui/StatCard';
 import { 
-  DollarSign, 
   ShoppingCart, 
   Package, 
   Settings, 
@@ -74,15 +73,7 @@ export default function Dashboard() {
   const lowStockCount = lowStockItems.length;
   const activeProductsCount = products.filter(item => item.status === 'published').length;
 
-  // Calculate dynamic Total Revenue
-  const totalRevenue = useMemo(() => {
-    return orders.reduce((sum, order) => {
-      if (order.status === 'cancelled') return sum;
-      const itemsTotal = (order.items || []).reduce((itemSum, item) => itemSum + (item.price * item.qty), 0);
-      const deliveryFee = Number(order.delivery_fee || 0);
-      return sum + itemsTotal + deliveryFee;
-    }, 0);
-  }, [orders]);
+
 
   // Dynamic status distribution for Pie Chart
   const statusData = useMemo(() => {
@@ -116,8 +107,7 @@ export default function Dashboard() {
         customer: o.customer?.name || 'N/A',
         avatar: o.customer?.avatar || '',
         date: o.date,
-        status: o.status,
-        total: `₦${((o.items || []).reduce((itemSum, item) => itemSum + (item.price * item.qty), 0) + Number(o.delivery_fee || 0)).toLocaleString()}`
+        status: o.status
       }));
   }, [orders]);
 
@@ -134,11 +124,7 @@ export default function Dashboard() {
         }
       } catch {}
       
-      const itemsTotal = (o.items || []).reduce((itemSum, item) => itemSum + (item.price * item.qty), 0);
-      const deliveryFee = Number(o.delivery_fee || 0);
-      const orderTotal = itemsTotal + deliveryFee;
-      
-      grouped[label] = (grouped[label] || 0) + orderTotal;
+      grouped[label] = (grouped[label] || 0) + 1;
     });
 
     const list = Object.keys(grouped).map(date => ({
@@ -206,13 +192,6 @@ export default function Dashboard() {
       {/* KPI Cards Grid */}
       <div className="stat-cards-grid">
         <StatCard 
-          label="Total Revenue" 
-          value={`₦${totalRevenue.toLocaleString()}`} 
-          icon={<DollarSign size={20} />} 
-          iconBgType="green-bg"
-          footer={{ prefix: 'Cumulative Storefront Earnings' }}
-        />
-        <StatCard 
           label="Total Orders" 
           value={orders.length} 
           icon={<ShoppingCart size={20} />} 
@@ -240,7 +219,7 @@ export default function Dashboard() {
         {/* Sales Overview Card */}
         <div className="dashboard-card">
           <div className="card-header-container">
-            <h2 className="card-title">Sales Overview</h2>
+            <h2 className="card-title">Order Volume</h2>
             <select className="card-select-dropdown" defaultValue="This Month">
               <option value="This Month">This Month</option>
               <option value="Last Month">Last Month</option>
@@ -264,14 +243,10 @@ export default function Dashboard() {
                     tickLine={false} 
                     axisLine={false}
                     tick={{ fill: 'var(--color-text-muted)', fontSize: 10 }}
-                    tickFormatter={(value) => {
-                      if (value === 0) return '₦0';
-                      if (value >= 1000000) return `₦${(value / 1000000).toFixed(1)}M`;
-                      return `₦${(value / 1000).toFixed(0)}K`;
-                    }}
+                    tickFormatter={(value) => value}
                   />
                   <Tooltip 
-                    formatter={(value) => [`₦${value.toLocaleString()}`, 'Sales']}
+                    formatter={(value) => [value, 'Orders']}
                     contentStyle={{ borderRadius: '8px', border: '1px solid #EEEEEE', fontFamily: 'var(--font-body)' }}
                   />
                   <Line 
@@ -375,7 +350,6 @@ export default function Dashboard() {
                   <th>Customer</th>
                   <th>Date</th>
                   <th>Status</th>
-                  <th>Total</th>
                 </tr>
               </thead>
               <tbody>
@@ -394,7 +368,6 @@ export default function Dashboard() {
                         {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                       </span>
                     </td>
-                    <td style={{ fontWeight: 600 }}>{order.total}</td>
                   </tr>
                 ))}
               </tbody>

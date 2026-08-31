@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { 
   User, 
@@ -21,6 +22,7 @@ const presetAvatars = [
 ];
 
 export default function Settings() {
+  const { setProfile: setSharedProfile, fetchNotifications } = useOutletContext();
   const [activeTab, setActiveTab] = useState('profile');
   const fileInputRef = useRef(null);
 
@@ -155,6 +157,18 @@ export default function Settings() {
       profile_location: profile.location,
       profile_avatar: profile.avatar
     });
+    
+    // Instantly update shared layout profile
+    if (setSharedProfile) {
+      setSharedProfile({
+        name: profile.name,
+        email: profile.email,
+        phone: profile.phone,
+        role: profile.role,
+        location: profile.location,
+        avatar: profile.avatar
+      });
+    }
   };
 
 
@@ -168,6 +182,15 @@ export default function Settings() {
       order_success_alert: notifications.orderSuccessAlert,
       weekly_report: notifications.weeklyReport
     });
+
+    // Instantly compile active notifications under new configuration
+    if (fetchNotifications) {
+      fetchNotifications({
+        lowStockAlert: notifications.lowStockAlert,
+        orderSuccessAlert: notifications.orderSuccessAlert,
+        weeklyReport: notifications.weeklyReport
+      });
+    }
   };
 
   // Security Password Submit

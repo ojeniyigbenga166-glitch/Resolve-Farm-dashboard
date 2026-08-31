@@ -35,7 +35,6 @@ export default function Products() {
   const [formData, setFormData] = useState({
     name: '',
     category: 'Vegetables',
-    price: '',
     unit: 'kg',
     status: 'published',
     img: ''
@@ -123,7 +122,6 @@ export default function Products() {
     setFormData({
       name: '',
       category: 'Vegetables',
-      price: '',
       unit: 'kg',
       status: 'published',
       img: ''
@@ -138,7 +136,6 @@ export default function Products() {
     setFormData({
       name: product.name,
       category: product.category,
-      price: product.price,
       unit: product.unit,
       status: product.status,
       img: product.img
@@ -213,15 +210,10 @@ export default function Products() {
       alert('Product name is required.');
       return;
     }
-    if (!formData.price || isNaN(formData.price) || Number(formData.price) <= 0) {
-      alert('Please enter a valid positive price.');
-      return;
-    }
 
     const savedProduct = {
       name: formData.name.trim(),
       category: formData.category,
-      price: Number(formData.price),
       unit: formData.unit,
       status: formData.status,
       img: formData.img || '' // Fallback
@@ -390,7 +382,7 @@ export default function Products() {
               
               <div className="product-card-body">
                 <h3 className="product-card-title">{product.name}</h3>
-                <span className="product-card-price">₦{product.price.toLocaleString()} / {product.unit}</span>
+                <span className="product-card-price">{product.unit} unit size</span>
                 
                 <div className="product-card-footer">
                   {/* Toggle Switch */}
@@ -443,7 +435,6 @@ export default function Products() {
                 <tr>
                   <th>Product Details</th>
                   <th>Category</th>
-                  <th>Price</th>
                   <th>Visibility</th>
                   <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
@@ -461,7 +452,6 @@ export default function Products() {
                       </div>
                     </td>
                     <td>{product.category}</td>
-                    <td style={{ fontWeight: 600 }}>₦{product.price.toLocaleString()}</td>
                     <td>
                       <div className="status-toggle-wrapper">
                         <label className="switch">
@@ -572,21 +562,7 @@ export default function Products() {
             </div>
           </div>
 
-          <div className="form-group">
-            <label>Unit Price</label>
-            <div className="price-input-wrapper">
-              <span>₦</span>
-              <input 
-                type="number" 
-                name="price" 
-                placeholder="1500"
-                value={formData.price}
-                onChange={handleInputChange}
-                required
-                min="1"
-              />
-            </div>
-          </div>
+
 
           <div className="form-group">
             <label>Storefront Status</label>

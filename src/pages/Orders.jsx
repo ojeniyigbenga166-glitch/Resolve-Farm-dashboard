@@ -10,7 +10,6 @@ import {
   Trash2, 
   Printer, 
   ShoppingBag, 
-  DollarSign, 
   CheckCircle2, 
   Mail, 
   Phone, 
@@ -39,7 +38,6 @@ export default function Orders() {
   const [newCustomerPhone, setNewCustomerPhone] = useState('');
   const [newCustomerAddress, setNewCustomerAddress] = useState('');
   const [newOrderItems, setNewOrderItems] = useState([]);
-  const [newDeliveryFee, setNewDeliveryFee] = useState(2000);
   const [newNotes, setNewNotes] = useState('');
   
   // Dynamic manual item selection fields
@@ -119,24 +117,15 @@ export default function Orders() {
       }
     }
   }, [location.state, orders]);
-  // Calculate order items totals
-  const getOrderTotal = (order) => {
-    const itemsTotal = (order.items || []).reduce((sum, item) => sum + (item.price * item.qty), 0);
-    return itemsTotal + order.deliveryFee;
-  };
+
 
   // KPI Calculations
   const stats = useMemo(() => {
-    let revenue = 0;
     let pendingCount = 0;
     let deliveredCount = 0;
     let totalCount = orders.length;
 
     orders.forEach(order => {
-      const orderTotal = getOrderTotal(order);
-      if (order.status !== 'cancelled') {
-        revenue += orderTotal;
-      }
       if (order.status === 'pending' || order.status === 'processing') {
         pendingCount++;
       }
@@ -145,7 +134,7 @@ export default function Orders() {
       }
     });
 
-    return { revenue, pendingCount, deliveredCount, totalCount };
+    return { revenue: 0, pendingCount, deliveredCount, totalCount };
   }, [orders]);
 
   // Filter & Sort Logic
@@ -187,13 +176,9 @@ export default function Orders() {
       .sort((a, b) => {
         const dateA = new Date(`${a.date} ${a.time}`);
         const dateB = new Date(`${b.date} ${b.time}`);
-        const amountA = getOrderTotal(a);
-        const amountB = getOrderTotal(b);
 
         if (sortBy === 'newest') return dateB - dateA;
         if (sortBy === 'oldest') return dateA - dateB;
-        if (sortBy === 'amount-desc') return amountB - amountA;
-        if (sortBy === 'amount-asc') return amountA - amountB;
         return 0;
       });
   }, [orders, searchQuery, selectedStatus, selectedDateRange, sortBy]);
@@ -290,7 +275,7 @@ export default function Orders() {
       setNewOrderItems(prev => [...prev, {
         id: product.id,
         name: product.name,
-        price: product.price,
+        price: 0,
         unit: product.unit,
         img: product.img || '',
         qty: Number(productQuantityToAdd)
@@ -337,7 +322,7 @@ export default function Orders() {
       time: timeStr,
       status: 'pending',
       items: newOrderItems,
-      delivery_fee: Number(newDeliveryFee),
+      delivery_fee: 0,
       notes: newNotes,
       timeline: [
         { status: 'Order Placed', time: timelineTimeStr }
@@ -352,7 +337,7 @@ export default function Orders() {
       time: timeStr,
       status: 'pending',
       items: newOrderItems,
-      deliveryFee: Number(newDeliveryFee),
+      deliveryFee: 0,
       notes: newNotes,
       timeline: dbOrder.timeline
     };
@@ -365,7 +350,7 @@ export default function Orders() {
     setNewCustomerPhone('');
     setNewCustomerAddress('');
     setNewOrderItems([]);
-    setNewDeliveryFee(2000);
+    setNewDeliveryFee(0);
     setNewNotes('');
     setIsCreateDrawerOpen(false);
 
@@ -641,15 +626,6 @@ export default function Orders() {
           </div>
         </div>
 
-        <div className="summary-ribbon-card">
-          <div className="summary-card-info">
-            <span className="summary-card-label">Net Sales (Excl. Cancelled)</span>
-            <span className="summary-card-value">₦{stats.revenue.toLocaleString()}</span>
-          </div>
-          <div className="summary-card-icon" style={{ backgroundColor: 'rgba(22, 58, 36, 0.05)', color: 'var(--color-forest)' }}>
-            <DollarSign size={16} />
-          </div>
-        </div>
       </div>
 
       {/* Toolbar Search & Filters */}
@@ -695,8 +671,6 @@ export default function Orders() {
           >
             <option value="newest">Newest First</option>
             <option value="oldest">Oldest First</option>
-            <option value="amount-desc">Amount: High to Low</option>
-            <option value="amount-asc">Amount: Low to High</option>
           </select>
 
           {(searchQuery || selectedStatus !== 'All' || selectedDateRange !== 'All Time') && (
@@ -732,14 +706,12 @@ export default function Orders() {
                 <th>Customer</th>
                 <th>Date / Time</th>
                 <th>Items Ordered</th>
-                <th>Amount</th>
                 <th>Status</th>
                 <th style={{ textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredOrders.map((order) => {
-                const totalAmount = getOrderTotal(order);
                 const firstLetter = order.customer.name.charAt(0);
                 
                 return (
@@ -769,7 +741,6 @@ export default function Orders() {
                         {order.items.map(item => `${item.name} (${item.qty}${item.unit})`).join(', ')}
                       </span>
                     </td>
-                    <td style={{ fontWeight: 600 }}>₦{totalAmount.toLocaleString()}</td>
                     <td onClick={(e) => e.stopPropagation()}>
                       <span className={`status-badge ${order.status}`}>
                         {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
@@ -813,7 +784,7 @@ export default function Orders() {
               })}
               {filteredOrders.length === 0 && (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--color-text-muted)' }}>
+                  <td colSpan="6" style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--color-text-muted)' }}>
                     No orders found matching your filters.
                   </td>
                 </tr>
@@ -953,8 +924,6 @@ export default function Orders() {
                       <th style={{ width: '40px' }}>Img</th>
                       <th>Product</th>
                       <th>Qty</th>
-                      <th style={{ textAlign: 'right' }}>Price</th>
-                      <th style={{ textAlign: 'right' }}>Subtotal</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -968,28 +937,10 @@ export default function Orders() {
                           <div style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)' }}>per {item.unit}</div>
                         </td>
                         <td>{item.qty} {item.unit}</td>
-                        <td style={{ textAlign: 'right' }}>₦{item.price.toLocaleString()}</td>
-                        <td style={{ textAlign: 'right', fontWeight: 600 }}>₦{(item.price * item.qty).toLocaleString()}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-
-                {/* Totals Summary */}
-                <div className="detail-totals">
-                  <div className="detail-totals-row">
-                    <span>Items Subtotal</span>
-                    <span>₦{selectedOrder.items.reduce((sum, item) => sum + (item.price * item.qty), 0).toLocaleString()}</span>
-                  </div>
-                  <div className="detail-totals-row">
-                    <span>Logistic Delivery Fee</span>
-                    <span>₦{selectedOrder.deliveryFee.toLocaleString()}</span>
-                  </div>
-                  <div className="detail-totals-row grand">
-                    <span>Total Amount (Inc. tax)</span>
-                    <span>₦{getOrderTotal(selectedOrder).toLocaleString()}</span>
-                  </div>
-                </div>
               </div>
 
               {selectedOrder.notes && (
@@ -1133,29 +1084,25 @@ export default function Orders() {
             {newOrderItems.length > 0 ? (
               <div className="added-items-container">
                 {newOrderItems.map((item) => (
-                  <div key={item.id} className="added-item-row">
-                    <div className="added-item-info">
-                      <img src={item.img} alt="" className="added-item-img" />
-                      <div>
-                        <strong>{item.name}</strong>
-                        <span style={{ color: 'var(--color-text-muted)', fontSize: '0.7rem', marginLeft: '0.5rem' }}>
-                          ₦{item.price.toLocaleString()}/{item.unit}
-                        </span>
+                      <div key={item.id} className="added-item-row">
+                        <div className="added-item-info">
+                          <img src={item.img} alt="" className="added-item-img" />
+                          <div>
+                            <strong>{item.name}</strong>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <span>{item.qty} {item.unit}</span>
+                          <button 
+                            type="button" 
+                            onClick={() => handleRemoveManualItem(item.id)}
+                            style={{ color: 'var(--color-tomato)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                            title="Remove crop"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <span>{item.qty} {item.unit}</span>
-                      <strong style={{ minWidth: '70px', textAlign: 'right' }}>₦{(item.price * item.qty).toLocaleString()}</strong>
-                      <button 
-                        type="button" 
-                        onClick={() => handleRemoveManualItem(item.id)}
-                        style={{ color: 'var(--color-tomato)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                        title="Remove crop"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  </div>
                 ))}
               </div>
             ) : (
@@ -1178,7 +1125,7 @@ export default function Orders() {
                   >
                     {catalogProducts.map(p => (
                       <option key={p.id} value={p.id}>
-                        {p.name} (₦{p.price}/{p.unit})
+                        {p.name} ({p.unit})
                       </option>
                     ))}
                   </select>
@@ -1207,31 +1154,7 @@ export default function Orders() {
             </div>
           </div>
 
-          {/* Pricing & Fees */}
-          <div className="form-group" style={{ borderBottom: '1px solid #F1F5F9', paddingBottom: '1rem' }}>
-            <label style={{ fontWeight: 700, marginBottom: '0.5rem' }}>Financial Parameters</label>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
-              <div>
-                <span style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Delivery Charge (₦)</span>
-                <input 
-                  type="number" 
-                  value={newDeliveryFee}
-                  onChange={(e) => setNewDeliveryFee(e.target.value)}
-                  min="0"
-                  required
-                  style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--color-border)', outline: 'none' }}
-                />
-              </div>
 
-              <div>
-                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', display: 'block', marginBottom: '0.25rem' }}>Live Grand Total:</span>
-                <strong style={{ fontSize: '1.1rem', color: 'var(--color-forest)', display: 'block', marginTop: '0.25rem' }}>
-                  ₦{(newOrderItems.reduce((sum, item) => sum + (item.price * item.qty), 0) + Number(newDeliveryFee)).toLocaleString()}
-                </strong>
-              </div>
-            </div>
-          </div>
 
           {/* Internal Notes */}
           <div className="form-group">
